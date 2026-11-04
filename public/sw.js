@@ -1,82 +1,88 @@
-const CACHE = "caf-" + (new URL(self.location).searchParams.get("v") || "v1");
+// Vite replaces these placeholders with the exact artifact's release and files.
+const BUILD = "__CAF_BUILD_ID__";
+const PRECACHE = ["__CAF_PRECACHE__"];
 const ROOT = new URL("./", self.location).href;
+const PREFIX = "caf:" + new URL(ROOT).pathname + ":";
+const CACHE = PREFIX + BUILD;
+
 self.addEventListener("install", (event) =>
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
-      const response = await fetch(ROOT);
-      if (!response.ok) throw new Error("Offline shell fetch failed");
-      const html = await response.clone().text();
-      const paths = [
-        ...html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css))"/g),
-      ].map((m) => new URL(m[1], ROOT).href);
-      await cache.put(ROOT, response);
-      await cache.addAll([
-        ...paths,
-        new URL("icon.svg", ROOT).href,
-        new URL("icon-192.png", ROOT).href,
-        new URL("icon-512.png", ROOT).href,
-        new URL("manifest.webmanifest", ROOT).href,
-      ]);
-      await self.skipWaiting();
+      try {
+        // Complete the whole release before replacing a working offline version.
+        await Promise.all(
+          PRECACHE.map(async (path) => {
+            const url = new URL(path, ROOT);
+            const response = await fetch(new Request(url, { cache: "reload" }));
+            if (!response.ok)
+              throw new Error(
+                `Precache failed: ${url.pathname} (${response.status})`,
+              );
+            if (path === "./") {
+              const html = await response.clone().text();
+              if (!html.includes(`name="caf-build" content="${BUILD}"`))
+                throw new Error(
+                  "Deployment changed during worker installation; retain the previous release",
+                );
+            }
+            if (
+              path.endsWith(".js") &&
+              !response.headers.get("content-type")?.includes("javascript")
+            )
+              throw new Error(`Expected compiled JavaScript: ${url.pathname}`);
+            if (
+              path.endsWith(".css") &&
+              !response.headers.get("content-type")?.includes("text/css")
+            )
+              throw new Error(`Expected compiled CSS: ${url.pathname}`);
+            await cache.put(url, response);
+          }),
+        );
+        await self.skipWaiting();
+      } catch (error) {
+        await caches.delete(CACHE);
+        throw error;
+      }
     })(),
   ),
 );
+
 self.addEventListener("activate", (event) =>
   event.waitUntil(
     (async () => {
-      for (const key of await caches.keys())
-        if (key.startsWith("caf-") && key !== CACHE) await caches.delete(key);
+      // Scope cleanup to this game. Also migrate its previous caf-* cache format.
+      for (const name of await caches.keys()) {
+        if (name === CACHE) continue;
+        const owned =
+          name.startsWith(PREFIX) ||
+          (name.startsWith("caf-") &&
+            !!(await (await caches.open(name)).match(ROOT)));
+        if (owned) await caches.delete(name);
+      }
       await self.clients.claim();
     })(),
   ),
 );
+
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
   if (
     event.request.method !== "GET" ||
-    new URL(event.request.url).origin !== self.location.origin
+    url.origin !== self.location.origin ||
+    !url.href.startsWith(ROOT)
   )
     return;
   event.respondWith(
     (async () => {
-      if (event.request.mode === "navigate") {
-        try {
-          const fresh = await fetch(event.request);
-          if (fresh.ok) {
-            const cache = await caches.open(CACHE);
-            await cache.put(ROOT, fresh.clone());
-          }
-          return fresh;
-        } catch {
-          const shell = await caches.match(ROOT);
-          if (shell) return shell;
-        }
-      }
-      // The preview server varies static assets by Origin. Module requests
-      // include Origin, while install-time precache requests may omit it.
-      // These versioned, same-origin static files have identical content.
-      const cached = await caches.match(event.request, {
-        ignoreVary: ["script", "style"].includes(event.request.destination),
-      });
+      const cache = await caches.open(CACHE);
+      // Keep HTML and its hashed dependencies from one complete release together.
+      // Registration checks sw.js without HTTP cache and reloads after activation.
+      const key = event.request.mode === "navigate" ? ROOT : event.request;
+      const cached = await cache.match(key, { ignoreVary: true });
       if (cached) return cached;
-      try {
-        const response = await fetch(event.request);
-        if (
-          response.ok &&
-          (event.request.destination === "script" ||
-            event.request.destination === "style")
-        ) {
-          const cache = await caches.open(CACHE);
-          await cache.put(event.request, response.clone());
-        }
-        return response;
-      } catch (error) {
-        if (event.request.mode === "navigate") {
-          const shell = await caches.match(ROOT);
-          if (shell) return shell;
-        }
-        throw error;
-      }
+      // Never add arbitrary HTML or a newer build's resources to this release.
+      return fetch(event.request);
     })(),
   );
 });

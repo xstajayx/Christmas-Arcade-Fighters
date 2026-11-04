@@ -23,7 +23,7 @@ npx playwright install --with-deps chromium
 npm run test:browser
 ```
 
-Browser tests use a locally installed `/usr/bin/chromium` when present, otherwise Playwright's Chromium. The runner starts its own development server on 4173 and a production preview under `/Christmas-Arcade-Fighters/` on 4180. Tests cover desktop, Android landscape and iPhone-sized landscape viewports **in Chromium**, not physical devices or Safari. Failure traces and screenshots are written to ignored `test-results/`.
+Browser tests use a locally installed `/usr/bin/chromium` when present, otherwise Playwright's Chromium. The runner builds and verifies `dist/`, then starts a development server on 4173 and a strict production static server under `/Christmas-Arcade-Fighters/` on 4180. Tests cover desktop, Android landscape and iPhone-sized landscape viewports **in Chromium**, not physical devices or Safari. Failure traces and screenshots are written to ignored `test-results/`.
 
 ## What is playable
 
@@ -84,7 +84,7 @@ Audio uses a 32-step original melody and synthesized effects. A production art p
 
 ## PWA and offline
 
-The production build registers a same-origin service worker scoped to the repository directory. Installation caches the shell, hashed JS/CSS, manifest and icon. After the first complete online load, reloads and gameplay work offline. Navigation checks the network for newer HTML; hashed assets are cached and a build-specific worker cache clears old versions. No external fonts or runtime services are required. Development mode does not register the worker. Clear site data to reset offline caches and saved progress.
+The production build registers a same-origin service worker scoped to the repository directory. Installation caches the shell, hashed JS/CSS, manifest and icon. After the first complete online load, reloads and gameplay work offline. HTML and all required assets are precached as one build-tagged release. A stable worker URL is checked without HTTP caching; complete new releases activate together and refresh an already controlled client once. Failed updates retain the working offline release. No external fonts or runtime services are required. Development mode does not register the worker. Clear site data to reset offline caches and saved progress.
 
 The manifest requests standalone landscape display. Browser/OS installation and orientation support vary. Physical iOS/Safari installation and gamepad compatibility still need device testing. The web bundle and service boundaries are compatible with a later Capacitor wrapper; native Android/iOS projects are not included.
 
@@ -92,7 +92,7 @@ The manifest requests standalone landscape display. Browser/OS installation and 
 
 The workflow in `.github/workflows/pages.yml` runs lint, unit tests, a strict production build and browser smoke tests, then deploys `dist/` on pushes to `main`. In repository **Settings → Pages**, select **GitHub Actions** as the source. Pull requests run checks without deploying. No tokens beyond the workflow's scoped built-in permissions are needed.
 
-Vite uses `base: './'`; CSS, JavaScript, manifest and worker URLs resolve correctly under a repository subdirectory. Browser tests exercise the actual built app at `/Christmas-Arcade-Fighters/` and reload it with the network disabled. The workflow is supplied but has not been executed or published from this workspace. Publishing requires committing/pushing and repository Pages configuration.
+Vite uses `/Christmas-Arcade-Fighters/` for builds and previews, and `/` for development; production CSS, JavaScript, manifest and worker URLs resolve under the repository subdirectory. Browser tests exercise the actual built app at `/Christmas-Arcade-Fighters/` and reload it with the network disabled. The workflow is supplied but has not been executed or published from this workspace. Publishing requires committing/pushing and repository Pages configuration.
 
 ## Known limitations
 
@@ -104,3 +104,5 @@ Vite uses `base: './'`; CSS, JavaScript, manifest and worker URLs resolve correc
 - Offline play requires a completed initial online load. Very old browsers lacking Web Audio can play silently; browsers without service workers need a network connection.
 
 See [TESTING.md](TESTING.md) for the completed local verification record and device-testing limits.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the confirmed Pages/environment configuration failure, required settings and deployment recovery checks.

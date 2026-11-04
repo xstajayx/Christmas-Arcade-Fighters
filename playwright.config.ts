@@ -14,19 +14,20 @@ export default defineConfig({
       ? { executablePath: "/usr/bin/chromium", args: ["--no-sandbox"] }
       : {},
   },
-  webServer: [
-    {
-      command: "npm run dev -- --port 4173",
-      url: "http://127.0.0.1:4173",
-      reuseExistingServer: !process.env.CI,
-    },
-    {
-      command:
-        "npm run build && npm run preview -- --port 4180 --base /Christmas-Arcade-Fighters/",
-      url: "http://127.0.0.1:4180/Christmas-Arcade-Fighters/",
-      reuseExistingServer: !process.env.CI,
-    },
-  ],
+  webServer: process.env.PAGES_TEST_URL
+    ? []
+    : [
+        {
+          command: "npm run dev -- --port 4173",
+          url: "http://127.0.0.1:4173",
+          reuseExistingServer: !process.env.CI,
+        },
+        {
+          command: "node tests/support/production-server.mjs",
+          url: "http://127.0.0.1:4180/Christmas-Arcade-Fighters/",
+          reuseExistingServer: !process.env.CI,
+        },
+      ],
   projects: [
     { name: "desktop", use: { viewport: { width: 1440, height: 1000 } } },
     {

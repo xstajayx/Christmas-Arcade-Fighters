@@ -12,6 +12,8 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    outputs:
+      build_id: ${{ steps.release.outputs.build_id }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,30 +21,108 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npm run verify:dist
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      # Use this exact dist artifact throughout smoke checks and deployment.
+      - run: npx playwright test
+      - name: Record tested release
+        id: release
+        run: node --input-type=module -e 'import fs from "node:fs"; const html=fs.readFileSync("dist/index.html","utf8"); const id=html.match(/name="caf-build" content="([^"]+)"/)[1]; fs.appendFileSync(process.env.GITHUB_OUTPUT,`build_id=${id}\n`);'
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: browser-results
           path: test-results/
       - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:
           path: dist
-  deploy:
+  configure:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: check
+    runs-on: ubuntu-latest
     permissions:
+      contents: read
+      pages: write
+    steps:
+      - name: Inspect Pages and select compiled Actions deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = context.repo;
+            try {
+              const { data: pages } = await github.rest.repos.getPages(repo);
+              core.info(`Pages build_type=${pages.build_type}; source=${JSON.stringify(pages.source)}`);
+              if (pages.build_type !== 'workflow') {
+                await github.rest.repos.updateInformationAboutPagesSite({...repo, build_type: 'workflow'});
+                core.info('Changed Pages source to GitHub Actions; repository-root publishing disabled.');
+              }
+            } catch (error) {
+              core.setFailed(`Cannot configure Pages: ${error.message}. In Settings > Pages, set Build and deployment > Source to GitHub Actions, then rerun this workflow.`);
+            }
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [check, configure]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy tested dist artifact
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify live compiled release
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          BUILD_ID: ${{ needs.check.outputs.build_id }}
+        run: |
+          node --input-type=module <<'JS'
+          const url = process.env.PAGE_URL;
+          let failure;
+          for (let attempt = 0; attempt < 12; attempt++) {
+            try {
+              const response = await fetch(url + '?release=' + process.env.BUILD_ID, {cache:'no-store'});
+              if (!response.ok) throw new Error(`HTML ${response.status}`);
+              const html = await response.text();
+              if (html.includes('/src/main.ts')) throw new Error('Live Pages serves source HTML');
+              if (!html.includes(`name="caf-build" content="${process.env.BUILD_ID}"`)) throw new Error('CDN still serves a different release');
+              const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map(m=>m[1]);
+              if (!assets.some(a=>a.endsWith('.js')) || !assets.some(a=>a.endsWith('.css'))) throw new Error('Missing compiled JS/CSS links');
+              for (const asset of assets) {
+                const file = await fetch(new URL(asset,url));
+                const expected = asset.endsWith('.js') ? 'javascript' : 'text/css';
+                if (!file.ok || !file.headers.get('content-type')?.includes(expected)) throw new Error(`Bad asset ${asset}: ${file.status}`);
+              }
+              console.log(`Live Pages serves tested release ${process.env.BUILD_ID}: ${url}`);
+              process.exit(0);
+            } catch (error) { failure=error; console.log(`Waiting for Pages CDN: ${error.message}`); }
+            await new Promise(resolve=>setTimeout(resolve,10000));
+          }
+          throw failure;
+          JS
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke test the live game
+        env:
+          PAGES_TEST_URL: ${{ steps.deployment.outputs.page_url }}
+        run: npx playwright test tests/browser/production.spec.ts --project desktop --grep "compiled Pages artifact"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: live-pages-results
+          path: test-results/

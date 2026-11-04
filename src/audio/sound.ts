@@ -5,6 +5,9 @@ export class Sound {
   music = 0.25;
   effects = 0.5;
   muted = false;
+  get state() {
+    return this.ctx?.state ?? "locked";
+  }
   unlock() {
     if (typeof AudioContext === "undefined") return;
     try {

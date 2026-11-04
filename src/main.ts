@@ -621,15 +621,37 @@ document.addEventListener("visibilitychange", () => {
     sound.suspend();
   }
 });
-if (import.meta.env.PROD && "serviceWorker" in navigator)
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hadController && !refreshing) {
+      refreshing = true;
+      window.location.reload();
+    }
+  });
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js?v=${__BUILD_ID__}`)
+      .register(`${import.meta.env.BASE_URL}sw.js`, {
+        scope: import.meta.env.BASE_URL,
+        updateViaCache: "none",
+      })
       .catch((err) => console.warn("Offline cache unavailable:", err));
   });
+}
 // Read-only diagnostics for automated checks; no damage/KO cheats are shipped.
 Object.defineProperty(window, "__CAF__", {
   get: () => ({
+    build: __BUILD_ID__,
+    rendering: {
+      frames: Object.fromEntries(
+        fighters.map((f) => [f.id, game.textures.get(f.id).frameTotal]),
+      ),
+      stages: Array.from({ length: 4 }, (_, i) =>
+        [0, 1, 2].every((layer) => game.textures.exists(`stage-${i}-${layer}`)),
+      ),
+      audio: sound.state,
+    },
     screen,
     mode,
     stage,

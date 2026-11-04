@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
     "test": "vitest run",
-    "test:browser": "playwright test"
+    "test:browser": "npm run build && npm run verify:dist && playwright test",
+    "verify:dist": "node scripts/verify-dist.mjs"
   },
   "dependencies": {
     "phaser": "^3.90.0"
