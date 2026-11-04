@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#10132a" />
+    <meta
+      name="description"
+      content="A little festive spirit. A lot of fighting spirit. An original pixel-art Christmas arcade fighter."
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <title>Christmas Arcade Fighters</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="masthead">
+        <a class="wordmark" href="#" aria-label="Christmas Arcade Fighters home"
+          ><span class="brand-icon">✳</span> NORTH STAR
+          <span class="muted">ARCADE</span></a
+        >
+        <div class="header-right">
+          <span class="status-dot"></span> ALL PLAY. NO QUARTERS.<button
+            id="sound-toggle"
+            class="icon-btn"
+            aria-label="Toggle sound"
+          >
+            ♪</button
+          ><button id="settings-toggle" class="icon-btn" aria-label="Settings">
+            ⚙
+          </button>
+        </div>
+      </header>
+      <main id="main">
+        <div class="arcade-shell">
+          <div class="machine-top">
+            <span><i></i> ORIGINAL ARCADE SERIES</span
+            ><span>EST. 1994 <b>✦</b> REBORN FOR CHRISTMAS</span>
+          </div>
+          <div id="game-wrap">
+            <div id="game"></div>
+            <div id="overlay"></div>
+            <div id="hud" hidden></div>
+            <div id="touch-controls" hidden></div>
+            <div id="rotate-hint">
+              ↻ Best played in landscape
+              <button aria-label="Dismiss orientation hint">×</button>
+            </div>
+          </div>
+          <div class="machine-bottom">
+            <span><i class="status-dot"></i> SYSTEM READY</span
+            ><span class="center-tag"
+              >✦ MADE OF PIXELS & CHRISTMAS SPIRIT ✦</span
+            ><span>60 FPS <b>•</b> 16-BIT SOUL</span>
+          </div>
+        </div>
+        <div class="below-game">
+          <span
+            ><kbd>↵</kbd> SELECT <kbd>ESC</kbd> BACK / PAUSE
+            <kbd>WASD</kbd> MOVE</span
+          ><span>KEYBOARD <i>+</i> TOUCH <i>+</i> GAMEPAD</span>
+        </div>
+      </main>
+      <footer>
+        <span
+          >© 2026 NORTH STAR ARCADE <span class="footer-divider">/</span> A
+          FESTIVE ORIGINAL</span
+        ><span>GOOD TIDINGS. GREAT FIGHTS. <b>✦</b></span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

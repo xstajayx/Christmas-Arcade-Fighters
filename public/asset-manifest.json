@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "style": "Original procedural pixel-art placeholders; not portrait-quality likenesses",
+  "license": "Original project artwork; no commercial fighting-game sprites used",
+  "referenceOnly": [
+    "a9d9d195-a844-41dc-be2c-88127373ecfe.webp",
+    "e90badb9-a55d-4119-85d9-928005a7b457.webp",
+    "f5edc500-cfaf-42a9-bd26-469e2f9778eb.webp"
+  ],
+  "fighters": {
+    "ids": ["jamie", "nash", "bucket", "beardy"],
+    "generator": "src/art/pixel.ts:drawFighter",
+    "frameWidth": 112,
+    "frameHeight": 128,
+    "columns": 12,
+    "rows": 1,
+    "transparent": true,
+    "pivot": [0.5, 0.97],
+    "faces": "right",
+    "frames": [
+      "idle",
+      "walk / idle alternate",
+      "crouch",
+      "jump",
+      "punch / grab",
+      "kick / low / aerial",
+      "block",
+      "hitstun / knockdown",
+      "special",
+      "anticipation",
+      "victory",
+      "defeat"
+    ],
+    "runtimeFallback": "Generated locally at boot; no external requests",
+    "exports": [
+      "sprites/jamie.png",
+      "sprites/nash.png",
+      "sprites/bucket.png",
+      "sprites/beardy.png"
+    ]
+  },
+  "stages": {
+    "ids": ["village", "pier", "workshop", "rooftops"],
+    "generator": "src/art/pixel.ts:drawStage",
+    "size": [800, 450],
+    "layers": [
+      "distant sky and skyline",
+      "midground buildings and props",
+      "ground"
+    ],
+    "runtimeAnimation": [
+      "snow",
+      "tree lights",
+      "parallax",
+      "pier wheel lights",
+      "workshop conveyor gifts"
+    ],
+    "fallback": "Same local generator"
+  },
+  "audio": {
+    "generator": "src/audio/sound.ts",
+    "music": "Original 32-step melody, triangle-wave bass",
+    "effects": [
+      "punch / kick impact",
+      "block",
+      "KO",
+      "jump",
+      "menu",
+      "special"
+    ],
+    "fallback": "Silent play when Web Audio is unavailable"
+  }
+}
