@@ -62,7 +62,7 @@ describe("fixed-step combat", () => {
     expect(m.fighters[0].meter).toBe(40);
     expect(m.fighters[0].move).toBe("special");
     expect(getMove("nash", "special").dash).toBeGreaterThan(0);
-    expect(getMove("bucket", "special").level).toBe("low");
+    expect(getMove("bucket", "special").kind).toBe("projectile");
   });
   it("jumps, lands and cannot walk through boundaries", () => {
     const m = ready();
@@ -76,7 +76,7 @@ describe("fixed-step combat", () => {
     const m = ready();
     run(m, 8, { punch: true }, { punch: true });
     expect(m.fighters[0].health).toBeLessThan(104);
-    expect(m.fighters[1].health).toBeLessThan(94);
+    expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health);
   });
   it("handles double KO and starts a fresh draw round", () => {
     const m = ready();
@@ -112,7 +112,7 @@ describe("fixed-step combat", () => {
     run(m, 100);
     m.fighters[1].health = 0;
     step(m, [{}, {}]);
-    expect(m.fighters[1].health).toBe(118);
+    expect(m.fighters[1].health).toBe(fighterById("bucket").health);
     expect(m.timer).toBe(5940);
   });
   it("is deterministic for identical recorded inputs", () => {
@@ -134,7 +134,7 @@ describe("fixed-step combat", () => {
     m.fighters[1].y = 280;
     m.fighters[1].vy = -1;
     run(m, 9, { punch: true });
-    expect(m.fighters[1].health).toBe(94);
+    expect(m.fighters[1].health).toBe(fighterById("nash").health);
   });
 });
 describe("CPU", () => {
@@ -221,5 +221,5 @@ it("cannot guard during an attack even when both buttons are held", () => {
   const m = ready();
   run(m, 8, { punch: true, block: true }, { punch: true, block: true });
   expect(m.fighters[0].health).toBeLessThan(103);
-  expect(m.fighters[1].health).toBeLessThan(93);
+  expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health - 1);
 });

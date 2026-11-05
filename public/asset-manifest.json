@@ -1,73 +1,220 @@
 {
-  "version": 1,
-  "style": "Original procedural pixel-art placeholders; not portrait-quality likenesses",
-  "license": "Original project artwork; no commercial fighting-game sprites used",
+  "version": 2,
+  "style": "Original generated pixel-art production candidates; motion/likeness continuity remains under review",
   "referenceOnly": [
     "a9d9d195-a844-41dc-be2c-88127373ecfe.webp",
     "e90badb9-a55d-4119-85d9-928005a7b457.webp",
     "f5edc500-cfaf-42a9-bd26-469e2f9778eb.webp"
   ],
+  "provenance": "Original assets generated for this project from the supplied Christmas reference; no commercial game sprites used",
   "fighters": {
-    "ids": ["jamie", "nash", "bucket", "beardy"],
-    "generator": "src/art/pixel.ts:drawFighter",
-    "frameWidth": 112,
-    "frameHeight": 128,
-    "columns": 12,
-    "rows": 1,
-    "transparent": true,
-    "pivot": [0.5, 0.97],
+    "ids": [
+      "jamie",
+      "nash",
+      "bucket",
+      "beardy"
+    ],
+    "boss": "frost",
+    "frameWidth": 192,
+    "frameHeight": 256,
+    "sourceGrid": [
+      8,
+      4
+    ],
+    "sourceFrameCount": 32,
+    "runtimeGrid": [
+      8,
+      6
+    ],
+    "runtimeFrameCount": 48,
+    "bossFrameCount": 32,
+    "pivot": [
+      0.45,
+      0.953125
+    ],
+    "scale": 0.75,
     "faces": "right",
+    "transparent": true,
+    "baseFiles": [
+      "atlases/jamie.webp",
+      "atlases/nash.webp",
+      "atlases/bucket.webp",
+      "atlases/beardy.webp",
+      "atlases/frost.webp"
+    ],
+    "supplement": {
+      "file": "atlases/actions.webp",
+      "rows": [
+        "jamie",
+        "nash",
+        "bucket",
+        "beardy"
+      ],
+      "columns": [
+        "low anticipation",
+        "low contact",
+        "low recovery",
+        "air anticipation",
+        "air contact",
+        "air recovery",
+        "throw reach",
+        "throw release"
+      ],
+      "baselineCorrectionY": -12,
+      "runtimeFrames": [
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ]
+    },
     "frames": [
       "idle",
-      "walk / idle alternate",
+      "idle alternate",
+      "walk left",
+      "walk passing",
+      "walk right",
+      "walk passing alternate",
       "crouch",
       "jump",
-      "punch / grab",
-      "kick / low / aerial",
-      "block",
-      "hitstun / knockdown",
-      "special",
-      "anticipation",
-      "victory",
-      "defeat"
+      "punch anticipation",
+      "punch windup",
+      "punch extension",
+      "punch contact",
+      "punch retract",
+      "punch recovery",
+      "high guard",
+      "low guard",
+      "kick anticipation",
+      "knee lift",
+      "kick extension",
+      "kick contact",
+      "kick recoil",
+      "kick recovery",
+      "light hit",
+      "heavy hit",
+      "special startup",
+      "special contact",
+      "grab reach",
+      "unique victory",
+      "kneeling",
+      "falling",
+      "defeat",
+      "rising"
     ],
-    "runtimeFallback": "Generated locally at boot; no external requests",
-    "exports": [
-      "sprites/jamie.png",
-      "sprites/nash.png",
-      "sprites/bucket.png",
-      "sprites/beardy.png"
-    ]
+    "animationMetadata": "src/animation/clips.ts",
+    "masters": "assets/source/*.png",
+    "pipeline": "npm run assets:prepare (FFmpeg lossless WebP; masters preserved)",
+    "failure": "Required-art errors stop boot with a retry screen; no rectangle fighter fallback",
+    "walk": {
+      "file": "atlases/walk.webp",
+      "rows": [
+        "jamie",
+        "nash",
+        "bucket",
+        "beardy"
+      ],
+      "grid": [
+        8,
+        4
+      ],
+      "runtimeFrames": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ]
+    },
+    "signatures": {
+      "files": [
+        "atlases/special-jamie.webp",
+        "atlases/special-nash.webp",
+        "atlases/special-bucket.webp",
+        "atlases/special-beardy.webp",
+        "atlases/special-frost.webp"
+      ],
+      "frameSize": [
+        256,
+        256
+      ],
+      "grid": [
+        6,
+        4
+      ],
+      "rows": [
+        "special",
+        "special2",
+        "special3",
+        "super"
+      ],
+      "phases": [
+        "anticipation",
+        "windup",
+        "extension",
+        "contact",
+        "recoil",
+        "recovery"
+      ],
+      "pivot": [
+        0.41015625,
+        0.953125
+      ]
+    }
   },
   "stages": {
-    "ids": ["village", "pier", "workshop", "rooftops"],
-    "generator": "src/art/pixel.ts:drawStage",
-    "size": [800, 450],
+    "ids": [
+      "village",
+      "pier",
+      "workshop",
+      "forest",
+      "rooftops",
+      "fortress"
+    ],
+    "atlas": "stages/arenas.webp",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "grid": [
+      2,
+      3
+    ],
+    "runtimeSize": [
+      800,
+      450
+    ],
     "layers": [
-      "distant sky and skyline",
-      "midground buildings and props",
-      "ground"
+      "background band",
+      "midground band",
+      "separate ground strip"
     ],
-    "runtimeAnimation": [
+    "animated": [
       "snow",
-      "tree lights",
-      "parallax",
+      "parallax planes",
+      "lighting",
+      "workshop gifts",
+      "forest mist",
       "pier wheel lights",
-      "workshop conveyor gifts"
+      "rooftop sleigh",
+      "fortress wind"
     ],
-    "fallback": "Same local generator"
+    "qualityGate": "Backplates are illustrated; bands are not fully hand-separated object depth masks. Additional foreground/object animation remains an art-production gate."
   },
   "audio": {
-    "generator": "src/audio/sound.ts",
-    "music": "Original 32-step melody, triangle-wave bass",
-    "effects": [
-      "punch / kick impact",
-      "block",
-      "KO",
-      "jump",
-      "menu",
-      "special"
-    ],
-    "fallback": "Silent play when Web Audio is unavailable"
+    "manifest": "voices/manifest.json",
+    "voiceGenerator": "eSpeak NG Emscripten, development only, plus FFmpeg",
+    "voiceQuality": "Original robotic synthesized pack; human/studio direction and listening sign-off remain open",
+    "music": "Nine original procedural looping themes in src/audio/sound.ts",
+    "effects": "Distinct normals, guards, counters, character/variant specials and Supers",
+    "pipeline": "npm run voices:generate",
+    "fallback": "Optional device speech, disabled by default and explicitly labelled"
   }
 }

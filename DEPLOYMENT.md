@@ -41,7 +41,7 @@ npm run preview
 # preview serves the production repository path
 ```
 
-The production smoke test verifies compiled links, CSS positioning, a nonblank Phaser canvas, four sprite sheets and four sets of stage textures, reachable PNG/manifest assets, a running audio context, fighter/stage selection, movement and damage from a real attack. Offline restart and stale-cache isolation have separate checks.
+The production smoke test verifies compiled links, CSS positioning, a nonblank Phaser canvas, all playable/boss/action/signature atlases and six sets of stage textures, reachable WebP/WAV/manifest assets, a running audio context, fighter/stage selection, movement and damage from a real attack. Offline restart and stale-cache isolation have separate checks.
 
 ## Cache updates and recovery
 
@@ -50,3 +50,7 @@ Each build emits a matching HTML release marker and a generated worker containin
 Registration uses a stable `sw.js` URL with `updateViaCache: none`. A newly activated worker reloads an already controlled client once to load the complete new version. Offline visits keep the last successful version. If a tab still predates the repair, close/reopen it or reload online; clearing site data is a last resort and also removes local scores/settings.
 
 A source-HTML deployment cannot be fixed by clearing browser cache alone. It must be replaced by the tested compiled Pages artifact. Confirm the workflow's final live smoke test succeeds before calling the live deployment repaired.
+
+## Latest observed repository run — 5 November 2026
+
+Latest fetched `main` is `2d6a384`; its intervening commits added and then deleted a separate Jekyll workflow, leaving the tracked file tree identical to the prior repair base. [Check and deploy arcade run 41926643345](https://github.com/xstajayx/Christmas-Arcade-Fighters/actions/runs/41926643345), triggered by that deletion, is publicly marked **Cancelled**; its annotation says it was canceled by the repository owner. It is not evidence of successful publication. The earlier protection/configuration failures above remain historical evidence; current Pages settings and live site health cannot be inspected through this environment’s blocked API/live destinations. The Ultimate feature branch has not been deployed.

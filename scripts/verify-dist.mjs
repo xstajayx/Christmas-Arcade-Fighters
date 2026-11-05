@@ -36,10 +36,38 @@ for (const file of [
   "manifest.webmanifest",
   "icon-192.png",
   "icon-512.png",
-  ...["jamie", "nash", "bucket", "beardy"].map((id) => `sprites/${id}.png`),
-]) {
+  "stages/arenas.webp",
+  ...[
+    "jamie",
+    "nash",
+    "bucket",
+    "beardy",
+    "frost",
+    "actions",
+    "walk",
+    ...["jamie", "nash", "bucket", "beardy", "frost"].map(
+      (id) => `special-${id}`,
+    ),
+  ].map((id) => `atlases/${id}.webp`),
+  "voices/manifest.json",
+])
   assert(existsSync(resolve(root, file)), `Missing public asset ${file}`);
+const voiceManifest = JSON.parse(
+  readFileSync(resolve(root, "voices/manifest.json"), "utf8"),
+);
+assert(
+  voiceManifest.clips.length === voiceManifest.required.length,
+  "Announcer clips incomplete",
+);
+for (const clip of voiceManifest.clips) {
+  const wave = readFileSync(resolve(root, "voices", clip.file));
+  assert(
+    wave.toString("ascii", 0, 4) === "RIFF" &&
+      wave.toString("ascii", 8, 12) === "WAVE",
+    `Invalid announcer WAV ${clip.id}`,
+  );
+  assert(wave.length > 2000, `Empty announcer clip ${clip.id}`);
 }
 console.log(
-  `Verified release ${id}: compiled HTML, JS/CSS, worker, sprites and repository base.`,
+  `Verified release ${id}: compiled HTML, JS/CSS, versioned worker, six arenas, base/action/walk/signature atlases and ${voiceManifest.clips.length} announcer clips.`,
 );

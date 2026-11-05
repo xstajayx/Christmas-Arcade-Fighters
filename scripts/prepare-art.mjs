@@ -1,0 +1,62 @@
+// Lossless format conversion only: preserve original PNG masters outside public/.
+import { spawnSync } from "node:child_process";
+import { mkdirSync, existsSync } from "node:fs";
+import process from "node:process";
+mkdirSync("public/atlases", { recursive: true });
+mkdirSync("public/stages", { recursive: true });
+for (const id of [
+  "jamie",
+  "nash",
+  "bucket",
+  "beardy",
+  "frost",
+  "actions",
+  "walk",
+  ...["jamie", "nash", "bucket", "beardy", "frost"].map(
+    (id) => `special-${id}`,
+  ),
+]) {
+  const source = `assets/source/${id}.png`;
+  if (!existsSync(source))
+    throw new Error(`Missing committed art master: ${source}`);
+  const result = spawnSync(
+    "ffmpeg",
+    [
+      "-loglevel",
+      "error",
+      "-y",
+      "-i",
+      source,
+      "-c:v",
+      "libwebp",
+      "-lossless",
+      "1",
+      "-compression_level",
+      "6",
+      `public/atlases/${id}.webp`,
+    ],
+    { stdio: "inherit" },
+  );
+  if (result.status !== 0) process.exit(1);
+}
+if (!existsSync("assets/source/arenas.png"))
+  throw new Error("Missing committed arena master: assets/source/arenas.png");
+const result = spawnSync(
+  "ffmpeg",
+  [
+    "-loglevel",
+    "error",
+    "-y",
+    "-i",
+    "assets/source/arenas.png",
+    "-c:v",
+    "libwebp",
+    "-lossless",
+    "1",
+    "-compression_level",
+    "6",
+    "public/stages/arenas.webp",
+  ],
+  { stdio: "inherit" },
+);
+if (result.status !== 0) process.exit(1);

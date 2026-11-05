@@ -54,10 +54,18 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
     (await request.get(new URL("assets/missing.js", root).href)).status(),
   ).toBe(404);
   for (const asset of [
-    "sprites/jamie.png",
-    "sprites/nash.png",
-    "sprites/bucket.png",
-    "sprites/beardy.png",
+    "atlases/jamie.webp",
+    "atlases/nash.webp",
+    "atlases/bucket.webp",
+    "atlases/beardy.webp",
+    "atlases/frost.webp",
+    "atlases/actions.webp",
+    "atlases/walk.webp",
+    ...["jamie", "nash", "bucket", "beardy", "frost"].map(
+      (id) => `atlases/special-${id}.webp`,
+    ),
+    "stages/arenas.webp",
+    "voices/fight.wav",
     "icon-192.png",
     "manifest.webmanifest",
   ])
@@ -70,14 +78,14 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
     (await page.locator("#game canvas").screenshot()).length,
   ).toBeGreaterThan(10000);
   const art = await page.evaluate(snapshot);
-  expect(Object.values(art.rendering.frames)).toEqual([13, 13, 13, 13]);
-  expect(art.rendering.stages).toEqual([true, true, true, true]);
+  expect(Object.values(art.rendering.frames)).toEqual([49, 49, 49, 49]);
+  expect(art.rendering.stages).toEqual([true, true, true, true, true, true]);
   await page.getByRole("button", { name: "LET’S FIGHT" }).click();
   await page
     .getByRole("button")
     .filter({ has: page.locator("strong", { hasText: "TRAINING" }) })
     .click();
-  await page.getByRole("button", { name: /NASH.*THE PIER/ }).click();
+  await page.getByRole("button", { name: /NASH.*REINDEER/ }).click();
   await page.getByRole("button", { name: "CHOOSE STAGE" }).click();
   await page
     .getByRole("button")
@@ -108,7 +116,7 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
   await page.keyboard.press("KeyK", { delay: 70 });
   await expect
     .poll(async () => (await page.evaluate(snapshot)).match!.fighters[1].health)
-    .toBeLessThan(118);
+    .toBeLessThan(96);
   expect(errors).toEqual([]);
 });
 
@@ -139,4 +147,22 @@ test("offline release ignores legacy stale shell caches", async ({
   expect((await page.evaluate(snapshot)).build).toBe(build);
   expect(await page.locator("body").innerText()).not.toContain("STALE SOURCE");
   await context.setOffline(false);
+});
+
+test("compact desktop keeps the complete game surface inside the viewport", async ({
+  page,
+}) => {
+  test.skip(test.info().project.name !== "desktop");
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(root);
+  await page.getByRole("button", { name: "LET’S FIGHT" }).click();
+  await page.locator('[data-action="training"]').click();
+  await page.locator('[data-action="stages"]').click();
+  await page.locator('[data-action="start"]').click();
+  await page.getByRole("button", { name: "GOT IT." }).click();
+  await page.getByRole("button", { name: "FULL METERS" }).click();
+  const box = await page.locator("#game-wrap").boundingBox();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(720);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });

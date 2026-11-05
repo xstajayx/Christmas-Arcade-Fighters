@@ -30,7 +30,11 @@ async function launch(page: Page, mode = "TRAINING") {
   await page.getByRole("button", { name: "LET’S FIGHT" }).click();
   await page
     .getByRole("button")
-    .filter({ has: page.locator("strong", { hasText: mode }) })
+    .filter({
+      has: page.getByText(mode === "VERSUS" ? "LOCAL VERSUS" : mode, {
+        exact: true,
+      }),
+    })
     .click();
   await page.getByRole("button", { name: "CHOOSE STAGE" }).click();
   await page.getByRole("button", { name: "START FIGHT" }).click();
@@ -54,7 +58,7 @@ test("loads, navigates, selects a fighter and starts responsive combat", async (
       (id) => game.textures.get(id).frameTotal,
     );
   });
-  expect(frames).toEqual([13, 13, 13, 13]);
+  expect(frames).toEqual([49, 49, 49, 49]);
   await page.getByRole("button", { name: "HOW TO PLAY" }).click();
   await expect(page.getByText("BRING THE HOLIDAY HEAT.")).toBeVisible();
   await page.getByRole("button", { name: "BACK TO THE ARCADE" }).click();
@@ -100,12 +104,14 @@ test("settings persist and all stages are selectable", async ({ page }) => {
     .getByRole("button")
     .filter({ has: page.locator("strong", { hasText: "TRAINING" }) })
     .click();
-  await page.getByRole("button", { name: /NASH.*THE PIER/ }).click();
+  await page.getByRole("button", { name: /NASH.*REINDEER/ }).click();
   await page.getByRole("button", { name: "CHOOSE STAGE" }).click();
   for (const text of [
     "SEASIDE PIER",
     "SANTA’S WORKSHOP",
+    "FROZEN FOREST",
     "FROZEN ROOFTOPS",
+    "FROST FORTRESS",
     "VILLAGE SQUARE",
   ]) {
     const b = page

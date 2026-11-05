@@ -1,0 +1,11 @@
+{
+  "url": "http://127.0.0.1:4180/Christmas-Arcade-Fighters/",
+  "recording": "Real-time keyboard input in training with explicit FULL METERS practice control, then an unattended Versus CPU match through KO/results. No health/timer/winner mutation. Silent Playwright WebM. Boss screenshots use a validated final-level save fixture, not evidence of reaching it through this recording.",
+  "timing": {
+    "samples": 180,
+    "medianMs": 33.30000000000291,
+    "p95Ms": 33.40000000000873,
+    "note": "Headless Linux Chromium only; not physical-device performance approval"
+  },
+  "errors": []
+}
