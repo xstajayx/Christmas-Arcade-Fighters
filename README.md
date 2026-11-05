@@ -1,102 +1,92 @@
-# Christmas Arcade Fighters
+# Christmas Arcade Fighters — V3: Arcade Evolution
 
-A playable, original Christmas fighting game built with **Phaser 3, strict TypeScript and Vite**. No accounts, backend, ads, external runtime APIs or paid assets. The three reference screenshots are preserved in the repository and are **never used as flattened gameplay layers**.
+An original Christmas fighter built with Phaser 3, strict TypeScript and Vite. V3 upgrades the existing game in place. It is a **playable release candidate**, with art, professional voice, human balance and physical-device approval still open. See [V3_PROGRESS.md](V3_PROGRESS.md).
 
-## Run locally
+## Play locally
 
-Use Node.js 22 or 24 and npm.
+Use Node.js 22 or 24:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open the address printed by Vite. A phone on the same network can use the machine's network address. Landscape is recommended; portrait provides a dismissible rotation hint. HTTPS or localhost is required for service workers and some gamepads. Audio starts after an explicit interaction. Some browsers require a keyboard or touch interaction before gamepad-driven play can produce audio.
+Landscape is recommended. Audio unlocks after a player gesture. Fullscreen uses the browser API where available and offers an immersive layout when unavailable. Safari/iPhone behavior still requires device review.
 
 ```sh
 npm run typecheck
 npm run lint
 npm test
 npm run build
-npm run preview
-npx playwright install --with-deps chromium
+npm run verify:dist
 npm run test:browser
 ```
 
-Browser tests use a locally installed `/usr/bin/chromium` when present, otherwise Playwright's Chromium. The runner builds and verifies `dist/`, then starts a development server on 4173 and a strict production static server under `/Christmas-Arcade-Fighters/` on 4180. Tests cover desktop, Android landscape and iPhone-sized landscape viewports **in Chromium**, not physical devices or Safari. Failure traces and screenshots are written to ignored `test-results/`.
+Browser checks use installed Chromium or Playwright Chromium. They exercise desktop and Android/iPhone-sized landscape viewports, not physical devices or Safari. A strict static server serves the compiled artifact under `/Christmas-Arcade-Fighters/`; source HTML must never be published directly.
 
-## Ultimate Edition candidate
+## Campaign and modes
 
-This branch upgrades the existing Phaser game. It is playable, but **not signed off as a finished premium release**. See [GAME_AUDIT.md](GAME_AUDIT.md), [GAME_PROGRESS.md](GAME_PROGRESS.md) and [the asset pipeline](docs/ASSET_PIPELINE.md) for evidence and open quality gates.
+The Arcade route contains ten main fights:
 
-- **Arcade:** six real best-of-three bouts across six arenas, escalating decision difficulty, three limited continues, saved campaign, bonuses, phased Frost Jamie boss and character-specific endings.
-- **Versus CPU:** select fighter, opponent, stage and difficulty.
-- **Training:** adjustable dummy, hitbox display, hit/damage totals, explicit practice-only full meters, reset and an interactive six-step tutorial.
-- **Local Versus:** independent P1/P2 keyboard or two gamepads. The supplied P2 scheme needs a numpad. One touchscreen does not provide two-player controls.
-- **Survival:** one-round waves, escalating opponents, carried health with 20% recovery between waves, and a saved result on defeat.
-- **High Scores:** ten validated local results including fighter, mode, bouts and completion result. No server or account.
+| Level | Challenge |
+| --- | --- |
+| 1 | Village welcome |
+| 2 | Speed and spacing |
+| 3 | Projectile pressure |
+| 4 | Guard and punish |
+| 5 | Throw specialist |
+| 6 | Confirm and cancel |
+| 7 | Aggressive winter gauntlet |
+| 8 | **The Rob Father** — major boss; unlocks his balanced playable profile |
+| 9 | **Frost Challenge** — advanced rival |
+| 10 | **Santa** — three-phase final boss; unlocks balanced Santa and the championship badge |
 
-Jamie is balanced with fire projectiles, a charge and ground wave; Nash is a slower heavyweight with a charge, clinch and launcher; Bucket uses snowballs, an evasive step and a spinning attack; Beardy uses counters, a defensive guard and an aerial reprisal. Each has a separate full-meter Super. Frost Jamie has original ice artwork, projectiles, spires, shielding and three aggression phases.
+The route is data-driven: arena, opponent, AI style, decision difficulty, dialogue and unlock rewards are defined per fight. Three initial continues, a refill checkpoint after Rob Father, next-opponent/arena previews, bonuses, endings and local scores remain available. Boss difficulty comes from patterns and phase rules as well as a separate stat profile; unlocked characters use standard health/meter/recovery and do not inherit boss armour.
 
-Village Square, Seaside Pier, Santa’s Workshop, Frozen Forest, Frozen Rooftops and Frost Fortress are playable. Original illustrated planes, snow, lighting and independently moving stage props replace the old primitive scenery. Full object-separated depth and additional wildlife/toy animation remain art-production gates.
+The primary arcade menu contains **Arcade, Versus, Training, Characters and Options**. Additional modes are in the secondary menu: CPU exhibition, local versus, survival, high scores and credits. Training includes configurable dummy behavior, explicit practice-only full meters, an interactive tutorial and a sprite inspector with frame, feet-anchor, pushbox, hitbox, hurtbox and camera overlays. Local versus needs independent keyboard controls or two gamepads; one touchscreen is not a two-player controller.
+
+Eight arenas are selectable, including the Collection Hall and Santa’s Throne at the North Pole. Random arena selection is available outside the campaign. The ten campaign challenges reuse existing arenas where appropriate rather than adding filler stages.
 
 ## Controls
 
-| Action | P1 default | P2 keyboard | Standard gamepad |
+| Action | P1 keyboard | P2 keyboard | Standard gamepad |
 | --- | --- | --- | --- |
 | Move | A / D | Left / Right | Stick / D-pad |
 | Jump / crouch | W / S | Up / Down | Up / Down |
-| Punch / kick | J / K | Numpad 1 / 2 | A / B |
-| Block (hold) | L | Numpad 3 | LB |
-| Special 1 | I | Numpad 5 | Y |
-| Special 2 / 3 | O / P | Numpad 6 / 7 | Forward / down + Y |
+| Punch / kick | J / K | Numpad 1 / 2 | South / east |
+| Guard | Hold **away** from opponent | Hold away | Hold away |
+| Low guard | Down + away | Down + away | Down + away |
+| Special 1 | I | Numpad 5 | North |
+| Special 2 / 3 | O / P | Numpad 6 / 7 | Forward / down + north |
 | Super | Space | Numpad 4 | RB |
-| Grab | U | Numpad 0 | X |
-| Heavy modifier / dash | Left Shift / Right Shift | — | Right / left trigger |
+| Grab / throw break | U | Numpad 0 | West |
+| Heavy modifier | Left Shift | Numpad 8 | Right trigger |
+| Dash | Right Shift | Numpad 9 | Left trigger |
 | Pause | Escape | Escape | Start |
 
-Forward + Punch/Kick gives a heavy attack. Crouch + attack gives a low attack; jump + attack gives an aerial attack. Neutral / forward / down + Special select three moves on touch/gamepad too. Grabs beat close guards. Specials consume their documented move cost; Supers consume a separate full 100-point meter. Confirmed attacks can cancel during specified windows. Inputs are buffered, and short press/release edges are retained until simulation consumption. Jump with joystick diagonals while another finger attacks.
+Holding away walks backwards outside a threat, then guards eligible incoming attacks. Low attacks beat standing guard; overheads beat crouching guard; mids can be guarded either way. Committed attacks cannot turn into instant guards. Throws beat normal guarding and require a grounded, eligible opponent in range. A successful grab links both bodies, lifts the defender and releases into a throw/landing; a fresh Grab can break the initial hold. Whiffs recover, and knockdown/throw immunity prevents immediate repeat throws.
 
-Settings offer remapping, music/effects/announcer volume, mute, four difficulty levels, reduced effects, touch size/opacity/position and optional vibration. Device speech is a separately labelled, disabled fallback. Lost focus pauses fights and clears inputs. Two-player keyboard ghosting depends on hardware; two gamepads are preferable.
+Forward + Punch/Kick gives heavy attacks. Crouch + attack gives a low, and jump + attack gives an aerial attack. Specials spend their configured meter cost; Supers spend a separate full meter. Supers stay in the arena with aura, lighting, trails, impacts and camera feedback rather than a portrait pop-up.
 
-## Architecture and assets
+Touch controls have five attack buttons, joystick diagonals and independent pointers. Options retain remapping, volume/mute, reduced effects, touch opacity/size/placement, vibration, compact layout and left-handed layout. Lost focus pauses combat and clears inputs.
 
-- `src/combat/engine.ts`: deterministic 60 Hz simulation, hit/hurtboxes, startup/active/recovery, confirmed cancels, projectiles, scaling, juggle limits, guarding/counters, throws, invulnerability, hitstop, cinematic freeze, rounds and timeout/double KO.
-- `src/fighters/data.ts`: character roles, stats, signature names and move data.
-- `src/animation/clips.ts`: real pose selection tied to simulation timing. No whole-character rotation/scale tricks for attacks.
-- `src/ai/cpu.ts`: seeded decisions with reaction budgets, range, recovery punishment, guarding, projectiles, meters and boss aggression phases. No future inputs or difficulty stat boosts.
-- `src/progression/campaign.ts`: six-bout routes, limited continues, bonuses and survival escalation.
-- `src/scenes/Arena.ts` and `src/art/pixel.ts`: Phaser presentation, required atlases, parallax and pooled particles. Failed required art loads stop at a retry screen.
-- `src/ui/input.ts`: independent keyboard/gamepad/multi-pointer joystick input.
-- `src/audio/sound.ts`: original nine procedural music loops, differentiated effects, lazy generated WAV announcements after audio unlock.
-- `src/config/storage.ts`: version-2 validated local save, version-1 migration, campaign and leaderboard.
-- `src/main.ts`: menu/match coordination, HUD, progression and offline registration. `window.__CAF__` returns copied read-only diagnostics, without force-win/health mutation hooks.
+## Engineering and asset pipeline
 
-Original generated PNG masters are preserved in `assets/source/`; lossless runtime WebPs and manifests are committed in `public/`. `npm run assets:prepare` requires FFmpeg, but normal installation/build does not regenerate art. `npm run voices:generate` uses development-only eSpeak NG WASM and FFmpeg for twenty-two generic robotic WAV clips. No paid service is required. The synthesizer is not bundled into the game. These announcements are not represented as studio human voice performances.
+- `src/combat/engine.ts`: deterministic 60 Hz state, independent collision geometry, buffered confirmed cancels, projectiles, directional guarding, linked throws/breaks, armour windows and boss phases.
+- `src/fighters/data.ts`: identities, standard/boss balance profiles, move data and ending dialogue.
+- `src/camera/framing.ts`: pure two-fighter framing, safe expansion, smooth contraction and visibility bounds. Initial framing is 25% closer; the DOM HUD/touch controls never zoom with the world.
+- `src/art/frames.ts`: exact-cell body isolation, normalization and explicit frame anchors; renderer mirroring compensates for per-frame pivots. Collision does not depend on transparent padding.
+- `src/scenes/Arena.ts`: nearest-neighbor presentation, dynamic camera, pooled effects, integrated Supers and stage atmosphere.
+- `src/progression/campaign.ts`: ten-level route, challenges, difficulty modifiers, scoring and survival.
+- `src/config/storage.ts`: version-3 save, validated unlocks, badges and migration. Old Frost progress maps to level 9; old scores/settings/continues survive without granting unearned new bosses.
+- `src/audio/sound.ts`: original procedural themes/effects and lazy manifest-based WAV announcements.
 
-Native-scale pose continuity, planted-foot alignment, directional jumps/landings, extended victory choreography, final mix and human balance require further review. Generated art is not automatically approved because it loads. The original reference WebPs remain reference-only; no commercial game sprites, music or code are used.
+Original PNG masters remain in `assets/source/`. Runtime WebPs and WAVs are committed, so ordinary installation/build needs no generator or paid service. `npm run assets:prepare` and `npm run voices:generate` require FFmpeg; the latter uses development-only eSpeak NG WASM. It is not bundled into the browser. See [V3 asset notes](docs/V3_ASSETS.md) and [audio production requirements](docs/V3_AUDIO.md).
 
-## PWA and offline
+## Verification and release limits
 
-The production build registers a same-origin service worker scoped to the repository directory. Installation caches the shell, hashed JS/CSS, manifest and icon. After the first complete online load, reloads and gameplay work offline. HTML and all required assets are precached as one build-tagged release. A stable worker URL is checked without HTTP caching; complete new releases activate together and refresh an already controlled client once. Failed updates retain the working offline release. No external fonts or runtime services are required. Development mode does not register the worker. Clear site data to reset offline caches and saved progress.
+See [TESTING.md](TESTING.md), [V3_PROGRESS.md](V3_PROGRESS.md) and `docs/review-v3/` for actual tests, screenshots and recordings. Generated sheets still need art direction for anatomy, foot planting, extended directional jumps/dashes and victory choreography. Robotic announcements are not a studio voice performance. Human balance, physical phones/Safari/controllers, sustained 60 FPS/thermal behavior and low-end texture/download budgets remain open gates.
 
-The manifest requests standalone landscape display. Browser/OS installation and orientation support vary. Physical iOS/Safari installation and gamepad compatibility still need device testing. The web bundle and service boundaries are compatible with a later Capacitor wrapper; native Android/iOS projects are not included.
+The existing Pages workflow installs with `npm ci`, builds/tests the same `dist/` artifact and deploys only from main. Repository-subpath asset references and atomic complete-release offline caching are preserved. Feature branches/PRs do not deploy. See [DEPLOYMENT.md](DEPLOYMENT.md) for the separate repository settings and live-access limits; local success does not establish live publication.
 
-## GitHub Pages
-
-The workflow in `.github/workflows/pages.yml` runs lint, unit tests, a strict production build and browser smoke tests, then deploys `dist/` on pushes to `main`. In repository **Settings → Pages**, select **GitHub Actions** as the source. Pull requests run checks without deploying. No tokens beyond the workflow's scoped built-in permissions are needed.
-
-Vite uses `/Christmas-Arcade-Fighters/` for builds and previews, and `/` for development; production CSS, JavaScript, manifest and worker URLs resolve under the repository subdirectory. Browser tests exercise the actual built app at `/Christmas-Arcade-Fighters/` and reload it with the network disabled. The prior repair passed GitHub checks, but Pages configuration/deployment protections blocked publication. See DEPLOYMENT.md for the exact required repository settings. Feature branches and PRs do not deploy.
-
-## Known limitations
-
-- No physical phone, Safari/WebKit, Bluetooth controller or two physical gamepads were tested. Mobile viewport tests run in Chromium.
-- Human balance, animation continuity, foreground depth, audio direction and sustained physical-device performance remain open gates.
-- The initial atlas download and decoded texture memory need profiling on low-end phones; audio clips load lazily, fighter sheets currently preload.
-- No network multiplayer, online leaderboard, rollback netcode or native Capacitor packaging is included.
-- Offline play requires a completed initial online load. Very old browsers lacking Web Audio can play silently; browsers without service workers need a network connection.
-- Live Pages verification is blocked by the current environment’s destination policy and repository settings; local subpath smoke tests do not establish live deployment success.
-
-See [TESTING.md](TESTING.md) for the completed local verification record and device-testing limits.
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the confirmed Pages/environment configuration failure, required settings and deployment recovery checks.
+No accounts, backend, external runtime APIs, copied commercial game assets, online multiplayer or online leaderboard are included. Network multiplayer, watch-CPU mode, custom round/timer options and additional filler arenas were deferred to prioritize the requested camera, animation, combat and boss work.

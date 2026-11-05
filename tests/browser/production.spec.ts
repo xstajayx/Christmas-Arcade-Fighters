@@ -1,3 +1,4 @@
+import { menuReady, chooseMode } from "./helpers";
 import { test, expect } from "@playwright/test";
 const root =
   process.env.PAGES_TEST_URL ||
@@ -59,9 +60,12 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
     "atlases/bucket.webp",
     "atlases/beardy.webp",
     "atlases/frost.webp",
+    "atlases/rob.webp",
+    "atlases/santa.webp",
+    "stages/v3-arenas.webp",
     "atlases/actions.webp",
     "atlases/walk.webp",
-    ...["jamie", "nash", "bucket", "beardy", "frost"].map(
+    ...["jamie", "nash", "bucket", "beardy", "frost", "rob", "santa"].map(
       (id) => `atlases/special-${id}.webp`,
     ),
     "stages/arenas.webp",
@@ -71,7 +75,7 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
   ])
     expect((await request.get(new URL(asset, root).href)).ok()).toBeTruthy();
   await page.goto(root);
-  await expect(page.getByRole("button", { name: "LET’S FIGHT" })).toBeVisible();
+  await menuReady(page);
   await expect(page.locator("#overlay")).toHaveCSS("position", "absolute");
   await expect(page.locator("#game canvas")).toHaveAttribute("width", "800");
   expect(
@@ -79,12 +83,18 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
   ).toBeGreaterThan(10000);
   const art = await page.evaluate(snapshot);
   expect(Object.values(art.rendering.frames)).toEqual([49, 49, 49, 49]);
-  expect(art.rendering.stages).toEqual([true, true, true, true, true, true]);
-  await page.getByRole("button", { name: "LET’S FIGHT" }).click();
-  await page
-    .getByRole("button")
-    .filter({ has: page.locator("strong", { hasText: "TRAINING" }) })
-    .click();
+  expect(art.rendering.stages).toEqual([
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+  ]);
+  await menuReady(page);
+  await chooseMode(page, "TRAINING");
   await page.getByRole("button", { name: /NASH.*REINDEER/ }).click();
   await page.getByRole("button", { name: "CHOOSE STAGE" }).click();
   await page
@@ -125,7 +135,7 @@ test("offline release ignores legacy stale shell caches", async ({
   context,
 }) => {
   await page.goto(root);
-  await expect(page.getByRole("button", { name: "LET’S FIGHT" })).toBeVisible();
+  await menuReady(page);
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
@@ -143,7 +153,7 @@ test("offline release ignores legacy stale shell caches", async ({
   });
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole("button", { name: "LET’S FIGHT" })).toBeVisible();
+  await menuReady(page);
   expect((await page.evaluate(snapshot)).build).toBe(build);
   expect(await page.locator("body").innerText()).not.toContain("STALE SOURCE");
   await context.setOffline(false);
@@ -155,7 +165,7 @@ test("compact desktop keeps the complete game surface inside the viewport", asyn
   test.skip(test.info().project.name !== "desktop");
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(root);
-  await page.getByRole("button", { name: "LET’S FIGHT" }).click();
+  await menuReady(page);
   await page.locator('[data-action="training"]').click();
   await page.locator('[data-action="stages"]').click();
   await page.locator('[data-action="start"]').click();
@@ -165,4 +175,30 @@ test("compact desktop keeps the complete game surface inside the viewport", asyn
   expect(box!.y).toBeGreaterThanOrEqual(0);
   expect(box!.y + box!.height).toBeLessThanOrEqual(720);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test("new boss arenas start against regular opponents with audio unlocked", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(root);
+  await menuReady(page);
+  for (const stage of [6, 7]) {
+    await chooseMode(page, "TRAINING");
+    await page.getByRole("button", { name: "CHOOSE STAGE" }).click();
+    await page.locator(`[data-action="stage-${stage}"]`).click();
+    await page.getByRole("button", { name: "START FIGHT" }).click();
+    const help = page.getByRole("button", { name: "GOT IT." });
+    if (await help.isVisible()) await help.click();
+    await expect
+      .poll(async () => (await page.evaluate(snapshot)).match?.phase)
+      .toBe("fight");
+    // Actual user clicks unlock AudioContext. Allow multiple music ticks.
+    await page.waitForTimeout(800);
+    expect(errors).toEqual([]);
+    await page.locator("#pause-button").click();
+    await page.locator('[data-action="quit"]').click();
+    await menuReady(page);
+  }
 });

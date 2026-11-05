@@ -1,0 +1,191 @@
+{
+  "scope": "PCM/non-silence/clipping checks only; not professional listening approval",
+  "clips": [
+    {
+      "file": "beardy.wav",
+      "duration": 0.516,
+      "peak": 25382,
+      "rms": 4011
+    },
+    {
+      "file": "boss-battle.wav",
+      "duration": 0.712,
+      "peak": 24047,
+      "rms": 4130
+    },
+    {
+      "file": "bucket-blizzard.wav",
+      "duration": 0.962,
+      "peak": 27365,
+      "rms": 2881
+    },
+    {
+      "file": "bucket.wav",
+      "duration": 0.486,
+      "peak": 27422,
+      "rms": 2994
+    },
+    {
+      "file": "choose-your-fighter.wav",
+      "duration": 1.113,
+      "peak": 27518,
+      "rms": 3609
+    },
+    {
+      "file": "combo.wav",
+      "duration": 0.611,
+      "peak": 27571,
+      "rms": 3837
+    },
+    {
+      "file": "congratulations.wav",
+      "duration": 1.27,
+      "peak": 27567,
+      "rms": 3320
+    },
+    {
+      "file": "counter.wav",
+      "duration": 0.59,
+      "peak": 27197,
+      "rms": 3735
+    },
+    {
+      "file": "festive-fury.wav",
+      "duration": 0.961,
+      "peak": 27555,
+      "rms": 2654
+    },
+    {
+      "file": "fight.wav",
+      "duration": 0.451,
+      "peak": 27022,
+      "rms": 3699
+    },
+    {
+      "file": "final-battle.wav",
+      "duration": 0.884,
+      "peak": 27570,
+      "rms": 3496
+    },
+    {
+      "file": "final-boss.wav",
+      "duration": 0.809,
+      "peak": 27475,
+      "rms": 3624
+    },
+    {
+      "file": "final-round.wav",
+      "duration": 0.842,
+      "peak": 27019,
+      "rms": 3484
+    },
+    {
+      "file": "first-hit.wav",
+      "duration": 0.749,
+      "peak": 27479,
+      "rms": 3472
+    },
+    {
+      "file": "frost.wav",
+      "duration": 0.835,
+      "peak": 27560,
+      "rms": 3436
+    },
+    {
+      "file": "jamie.wav",
+      "duration": 0.435,
+      "peak": 27509,
+      "rms": 3861
+    },
+    {
+      "file": "knockout.wav",
+      "duration": 0.527,
+      "peak": 22908,
+      "rms": 3746
+    },
+    {
+      "file": "nash.wav",
+      "duration": 0.404,
+      "peak": 27534,
+      "rms": 4022
+    },
+    {
+      "file": "new-challenger.wav",
+      "duration": 0.876,
+      "peak": 26189,
+      "rms": 3924
+    },
+    {
+      "file": "perfect.wav",
+      "duration": 0.664,
+      "peak": 27375,
+      "rms": 2723
+    },
+    {
+      "file": "reindeer-rampage.wav",
+      "duration": 1.073,
+      "peak": 27401,
+      "rms": 2933
+    },
+    {
+      "file": "rob.wav",
+      "duration": 0.943,
+      "peak": 21010,
+      "rms": 3899
+    },
+    {
+      "file": "round-one.wav",
+      "duration": 0.784,
+      "peak": 27095,
+      "rms": 4458
+    },
+    {
+      "file": "round-two.wav",
+      "duration": 0.771,
+      "peak": 27388,
+      "rms": 3971
+    },
+    {
+      "file": "santa-slam.wav",
+      "duration": 0.948,
+      "peak": 27531,
+      "rms": 3887
+    },
+    {
+      "file": "santa.wav",
+      "duration": 0.554,
+      "peak": 26284,
+      "rms": 3952
+    },
+    {
+      "file": "santas-final-delivery.wav",
+      "duration": 1.539,
+      "peak": 27572,
+      "rms": 3480
+    },
+    {
+      "file": "super.wav",
+      "duration": 0.503,
+      "peak": 27520,
+      "rms": 3646
+    },
+    {
+      "file": "the-rob-father-special.wav",
+      "duration": 1.362,
+      "peak": 27379,
+      "rms": 3472
+    },
+    {
+      "file": "you-lose.wav",
+      "duration": 0.663,
+      "peak": 25073,
+      "rms": 3512
+    },
+    {
+      "file": "you-win.wav",
+      "duration": 0.592,
+      "peak": 27531,
+      "rms": 3602
+    }
+  ]
+}

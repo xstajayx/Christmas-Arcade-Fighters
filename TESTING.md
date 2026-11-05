@@ -1,3 +1,36 @@
+# V3 release-candidate verification — 5 November 2026
+
+Tested on managed Linux with system Chromium. The final production release is `1793917841545`, served strictly under `/Christmas-Arcade-Fighters/`; the same built artifact is used for final focused browser checks and review captures. The complete regression passed on preceding release `1793916597264`, before the music-only correction described below. This is a playable candidate, with the remaining production gates recorded in V3_PROGRESS.md.
+
+| Check | Result |
+| --- | --- |
+| `npm ci` | Passed from lockfile |
+| `npm run typecheck` / `npm run lint` | Passed |
+| `npm test` | 63 passed: combat 22, Ultimate 16, storage 4, worker 4, V3 17 |
+| `npm run build` / `npm run verify:dist` | Passed; compiled JS/CSS, repository base, complete-release worker, all required art and 31 voice files |
+| Full browser regression before final music fix | 64 passed, 8 intentional skips, 0 failures; 13.9 minutes |
+| Full input-driven ten-bout campaign focused rerun | Passed after final Super/checkpoint fixes, 25.1 seconds |
+| Lossless art validation | 18 PNG/WebP pairs preserve visible pixels; docs/v3-art-validation.json |
+| Voice integrity | All 31 PCM clips contain audio without full-scale clipping; docs/v3-voice-validation.json. Not professional listening approval |
+
+The browser matrix uses desktop 1440×1000, Android landscape 915×412 and iPhone-sized landscape 844×390, all in Chromium. Eight intentional skips exclude two desktop touch cases, duplicated campaign/survival simulations on the two mobile viewports, and the compact-desktop case on mobile. Both mobile layouts exercise production rendering, touch input, stage loading, fullscreen handling and V3 content.
+
+The ten-bout playthrough drives actual keyboard events and the real scene with seeded CPU player inputs, accelerating simulation ticks rather than rendering. It never changes health, timers, winners or earned progression. The campaign asserts both unlocks, Santa's final phase, checkpoint-earned continue budget, championship score/ending, reload persistence and the normalized playable Rob profile. Saved-boss fixtures test loading and rendering separately and do not establish campaign completion.
+
+Production recording then caught an additional uncaught error missed by the original suite: training against a regular opponent on either new boss arena selected an undefined music track. Both stages now map to their dedicated themes, and an audio-unlocked production regression starts both arenas in all three layouts. Typecheck/lint, all 63 unit checks, build and artifact verification passed again. Final focused browser result: 7 passed, 2 intentional duplicate-campaign skips, 0 failures in 2.0 minutes (compiled production + new-arena audio in all three layouts; genuine ten-bout campaign on desktop).
+
+QA exposed an actual Super defect: early launches could consume the juggle cap before Santa's fourth contact. A failing contact-count test confirmed it; launch now belongs to the finisher. Recovery openings and the explicit Rob checkpoint credit refill were tuned and retested with genuine combat. An earlier browser fixture also reset legitimately earned unlocks during reload; it now seeds only an absent save. No failures were skipped to obtain the final result.
+
+V3 coverage includes connected-body frame extraction, wide-pose preservation/anchors, mirroring, camera framing, linked grab/lift/release/landing/break/whiff behavior, directional low/overhead guards, boss-only armour, three-phase Santa, save migration, separate playable profiles, inspector frame limits, native fullscreen aspect and fallback, and fixed HUD while the world camera expands. Existing deployment, stale-cache, failed-update, input/gamepad/tutorial/survival checks remain enabled.
+
+Deployment checks verify compiled HTML, JS/CSS MIME types and visible styling/canvas; load all stages, fighter textures and WAVs; then select a character and perform combat. The workflow builds once, tests that `dist/` and deploys that exact artifact only from main. The current published Ultimate workflow is successful; V3 publication has not occurred. Local network policy prevents direct live Pages and GitHub PR API access.
+
+Final capture: 28 unedited production screenshots and three silent real-time WebMs, no uncaught page errors; both boss encounters ended in player wins with corresponding unlocks. Capture build matches the final focused browser build. Review evidence and its explicit save fixtures are documented in docs/V3_VISUAL_REVIEW.md. Physical Safari/phones/controllers, sustained mobile frame rate/thermal/download budgets, all-character human balance, final source animation/anatomy and professional voice approval remain open. The unpacked production artifact is approximately 36 MiB and all fighter textures currently preload.
+
+---
+
+## Historical Ultimate verification
+
 # Ultimate Edition verification — 5 November 2026
 
 The candidate was tested locally in managed Linux with installed Chromium. This is implementation evidence, not final premium art/audio/device approval.

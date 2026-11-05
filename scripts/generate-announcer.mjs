@@ -17,7 +17,7 @@ mkdirSync("public/voices", { recursive: true });
 const clips = [];
 for (const id of manifest.required) {
   const parts = [];
-  speaker.synthesize(id.replaceAll("-", " "), (data) => {
+  speaker.synthesize(manifest.text?.[id] || id.replaceAll("-", " "), (data) => {
     if (data.length) parts.push(Int16Array.from(data));
     return false;
   });

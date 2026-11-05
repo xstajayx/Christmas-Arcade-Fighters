@@ -1,0 +1,32 @@
+{
+  "build": "1793917841545",
+  "url": "http://127.0.0.1:4180/Christmas-Arcade-Fighters/",
+  "errors": [],
+  "bossResults": [
+    {
+      "opponent": "rob",
+      "winner": 0,
+      "phase": 1,
+      "unlocked": [
+        "jamie",
+        "nash",
+        "bucket",
+        "beardy",
+        "rob"
+      ]
+    },
+    {
+      "opponent": "santa",
+      "winner": 0,
+      "phase": 2,
+      "unlocked": [
+        "jamie",
+        "nash",
+        "bucket",
+        "beardy",
+        "santa"
+      ]
+    }
+  ],
+  "note": "Silent real-time recordings of actual production gameplay. Training review uses a declared unlocked-roster fixture and the visible FULL METERS control. Boss review starts from declared saved levels 8/10 and drives a seeded CPU player through actual keyboard events. No health/timer/winner mutation or accelerated simulation. The separate earned-championship screenshot comes from the ten-bout automated browser test."
+}

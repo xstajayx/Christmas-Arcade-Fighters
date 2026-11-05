@@ -37,15 +37,18 @@ for (const file of [
   "icon-192.png",
   "icon-512.png",
   "stages/arenas.webp",
+  "stages/v3-arenas.webp",
   ...[
     "jamie",
     "nash",
     "bucket",
     "beardy",
     "frost",
+    "rob",
+    "santa",
     "actions",
     "walk",
-    ...["jamie", "nash", "bucket", "beardy", "frost"].map(
+    ...["jamie", "nash", "bucket", "beardy", "frost", "rob", "santa"].map(
       (id) => `special-${id}`,
     ),
   ].map((id) => `atlases/${id}.webp`),
@@ -69,5 +72,5 @@ for (const clip of voiceManifest.clips) {
   assert(wave.length > 2000, `Empty announcer clip ${clip.id}`);
 }
 console.log(
-  `Verified release ${id}: compiled HTML, JS/CSS, versioned worker, six arenas, base/action/walk/signature atlases and ${voiceManifest.clips.length} announcer clips.`,
+  `Verified release ${id}: compiled HTML, JS/CSS, versioned worker, eight arenas, base/action/walk/signature atlases and ${voiceManifest.clips.length} announcer clips.`,
 );

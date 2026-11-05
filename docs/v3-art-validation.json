@@ -1,0 +1,164 @@
+[
+  {
+    "file": "public/atlases/actions.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1528224,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/stages/arenas.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 2849946,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/beardy.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1770820,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/bucket.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1510974,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/frost.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1999948,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/jamie.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1573488,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/nash.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1541752,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/rob.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 2044056,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/santa.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 2365812,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/special-beardy.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1723504,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/special-bucket.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1603598,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/special-frost.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1932324,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/special-jamie.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1600770,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/special-nash.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1592256,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/special-rob.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1797802,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/special-santa.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 2332522,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/stages/v3-arenas.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 2811560,
+    "equivalence": "visible pixels on black and white backgrounds"
+  },
+  {
+    "file": "public/atlases/walk.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "bytes": 1677244,
+    "equivalence": "visible pixels on black and white backgrounds"
+  }
+]

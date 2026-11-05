@@ -1,3 +1,4 @@
+import { menuReady, chooseMode } from "./helpers";
 import { test, expect, type Page } from "@playwright/test";
 type Snapshot = {
   screen: string;
@@ -15,27 +16,14 @@ type Snapshot = {
   } | null;
 };
 async function openSettings(page: Page) {
-  await expect(page.getByRole("button", { name: "LET’S FIGHT" })).toBeVisible();
-  if (await page.locator("#settings-toggle").isVisible())
-    await page.locator("#settings-toggle").click();
-  else {
-    await page.getByRole("button", { name: "LET’S FIGHT" }).click();
-    await page.locator("[data-action=settings]").click();
-  }
+  await menuReady(page);
+  await page.locator("[data-action=settings]").click();
 }
 const state = (page: Page) =>
   page.evaluate(() => (window as unknown as { __CAF__: Snapshot }).__CAF__);
 async function launch(page: Page, mode = "TRAINING") {
   await page.goto("/");
-  await page.getByRole("button", { name: "LET’S FIGHT" }).click();
-  await page
-    .getByRole("button")
-    .filter({
-      has: page.getByText(mode === "VERSUS" ? "LOCAL VERSUS" : mode, {
-        exact: true,
-      }),
-    })
-    .click();
+  await chooseMode(page, mode);
   await page.getByRole("button", { name: "CHOOSE STAGE" }).click();
   await page.getByRole("button", { name: "START FIGHT" }).click();
   if (await page.getByRole("button", { name: "GOT IT." }).isVisible())
@@ -98,12 +86,11 @@ test("settings persist and all stages are selectable", async ({ page }) => {
   await expect(page.locator("#reduced")).toBeChecked();
   await expect(page.locator("[data-action=remap-punch] kbd")).toHaveText("F");
   await page.getByRole("button", { name: "DONE" }).click();
-  if (await page.getByRole("button", { name: "LET’S FIGHT" }).isVisible())
-    await page.getByRole("button", { name: "LET’S FIGHT" }).click();
-  await page
-    .getByRole("button")
-    .filter({ has: page.locator("strong", { hasText: "TRAINING" }) })
-    .click();
+  if (
+    await page.getByRole("button", { name: "ARCADE", exact: true }).isVisible()
+  )
+    await menuReady(page);
+  await chooseMode(page, "TRAINING");
   await page.getByRole("button", { name: /NASH.*REINDEER/ }).click();
   await page.getByRole("button", { name: "CHOOSE STAGE" }).click();
   for (const text of [
@@ -113,6 +100,10 @@ test("settings persist and all stages are selectable", async ({ page }) => {
     "FROZEN ROOFTOPS",
     "FROST FORTRESS",
     "VILLAGE SQUARE",
+    "THE COLLECTION HALL",
+    "SANTA’S THRONE · NORTH POLE",
+    "THE COLLECTION HALL",
+    "SANTA’S THRONE · NORTH POLE",
   ]) {
     const b = page
       .getByRole("button")
@@ -238,13 +229,11 @@ test("a standard gamepad navigates menus and drives combat", async ({
     await page.waitForTimeout(100);
   };
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "LET’S FIGHT" })).toBeVisible();
+  await menuReady(page);
+  await press(13);
+  await press(13);
   await press(0);
-  await expect(page.getByText("CHOOSE YOUR FIGHT.")).toBeVisible();
-  await page
-    .getByRole("button")
-    .filter({ has: page.locator("strong", { hasText: "TRAINING" }) })
-    .click();
+  await expect(page.getByText("CHOOSE YOUR FIGHTER.")).toBeVisible();
   await page.locator("#opponent").focus();
   const old = await page.locator("#opponent").inputValue();
   await press(15);

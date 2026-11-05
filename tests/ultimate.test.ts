@@ -144,16 +144,16 @@ describe("Ultimate combat", () => {
   });
 });
 describe("campaign and survival", () => {
-  it("six wins reach the distinct boss and complete exactly once", () => {
+  it("ten wins reach the distinct boss and complete exactly once", () => {
     const c = newCampaign("jamie");
     const path = route(c.fighter);
-    expect(path).toHaveLength(6);
-    expect(new Set(path.map((b) => b.stage)).size).toBe(6);
-    expect(path[5].opponent).toBe("frost");
-    expect(path[5].line).toContain("Jamie");
-    for (let i = 0; i < 6; i++) expect(advance(c, true, 1000)).toBe(true);
+    expect(path).toHaveLength(10);
+    expect(new Set(path.map((b) => b.stage)).size).toBe(8);
+    expect(path[8].opponent).toBe("frost");
+    expect(path[8].line).toContain("Jamie");
+    for (let i = 0; i < 10; i++) expect(advance(c, true, 1000)).toBe(true);
     expect(c.completed).toBe(true);
-    expect(c.score).toBe(6000);
+    expect(c.score).toBe(10000);
     expect(advance(c, true, 1000)).toBe(false);
   });
   it("continues are limited and a defeat does not advance the route", () => {
@@ -178,20 +178,24 @@ describe("campaign and survival", () => {
     expect(c.completed).toBe(false);
     expect(survivalBout(c).difficulty).toBe("master");
   });
-  it("a seeded input-driven player can finish the six real combat bouts", () => {
+  it("a seeded input-driven player can finish the ten real combat bouts", () => {
     const c = newCampaign("nash");
     for (const bout of route("nash")) {
       let won = false;
       for (let attempt = 0; attempt < 4 && !won; attempt++) {
-        const m = createMatch("nash", bout.opponent),
+        const m = createMatch("nash", bout.opponent, false, bout.profile),
           player = new CPU("master", 7 + attempt),
-          cpu = new CPU(bout.difficulty, 41 + bout.stage * 17);
+          cpu = new CPU(bout.difficulty, 41 + c.index * 17, bout.style);
         for (let t = 0; t < 25000 && m.phase !== "matchOver"; t++)
           step(m, [player.input(m, 0), cpu.input(m, 1)]);
         expect(m.phase).toBe("matchOver");
         won = m.winner === 0;
         if (won) advance(c, true, m.fighters[0].score);
-        else expect(continueCampaign(c)).toBe(true);
+        else
+          expect(
+            continueCampaign(c),
+            `continue budget at level ${c.index + 1}`,
+          ).toBe(true);
       }
       expect(won, `stage ${bout.stage}`).toBe(true);
     }

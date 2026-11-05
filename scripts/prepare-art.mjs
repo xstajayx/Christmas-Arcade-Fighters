@@ -10,9 +10,11 @@ for (const id of [
   "bucket",
   "beardy",
   "frost",
+  "rob",
+  "santa",
   "actions",
   "walk",
-  ...["jamie", "nash", "bucket", "beardy", "frost"].map(
+  ...["jamie", "nash", "bucket", "beardy", "frost", "rob", "santa"].map(
     (id) => `special-${id}`,
   ),
 ]) {
@@ -60,3 +62,23 @@ const result = spawnSync(
   { stdio: "inherit" },
 );
 if (result.status !== 0) process.exit(1);
+
+const v3 = spawnSync(
+  "ffmpeg",
+  [
+    "-loglevel",
+    "error",
+    "-y",
+    "-i",
+    "assets/source/v3-arenas.png",
+    "-c:v",
+    "libwebp",
+    "-lossless",
+    "1",
+    "-compression_level",
+    "6",
+    "public/stages/v3-arenas.webp",
+  ],
+  { stdio: "inherit" },
+);
+if (v3.status !== 0) process.exit(1);

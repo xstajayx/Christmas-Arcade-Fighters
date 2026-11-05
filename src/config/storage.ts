@@ -1,5 +1,5 @@
 import type { Difficulty } from "../ai/cpu";
-import type { Campaign } from "../progression/campaign";
+import { route, type Campaign } from "../progression/campaign";
 import type { FighterId } from "../fighters/data";
 export interface Settings {
   music: number;
@@ -14,6 +14,8 @@ export interface Settings {
   vibration: boolean;
   speechFallback: boolean;
   reduced: boolean;
+  compact: boolean;
+  leftHanded: boolean;
   keys: Record<string, string>;
 }
 export interface Score {
@@ -24,7 +26,7 @@ export interface Score {
   bouts: number;
 }
 export interface Save {
-  version: 2;
+  version: 3;
   settings: Settings;
   highScore: number;
   arcadeWins: number;
@@ -33,6 +35,7 @@ export interface Save {
   unlocked: string[];
   scores: Score[];
   campaign: Campaign | null;
+  badges: string[];
 }
 export const defaultKeys = {
   left: "KeyA",
@@ -41,7 +44,6 @@ export const defaultKeys = {
   down: "KeyS",
   punch: "KeyJ",
   kick: "KeyK",
-  block: "KeyL",
   special: "KeyI",
   grab: "KeyU",
   special2: "KeyO",
@@ -49,7 +51,7 @@ export const defaultKeys = {
   super: "Space",
 };
 export const defaults = (): Save => ({
-  version: 2,
+  version: 3,
   settings: {
     music: 0.25,
     effects: 0.5,
@@ -63,6 +65,8 @@ export const defaults = (): Save => ({
     vibration: false,
     speechFallback: false,
     reduced: false,
+    compact: false,
+    leftHanded: false,
     keys: { ...defaultKeys },
   },
   highScore: 0,
@@ -72,13 +76,14 @@ export const defaults = (): Save => ({
   unlocked: ["jamie", "nash", "bucket", "beardy"],
   scores: [],
   campaign: null,
+  badges: [],
 });
-const ids = ["jamie", "nash", "bucket", "beardy"];
+const ids = ["jamie", "nash", "bucket", "beardy", "rob", "santa"];
 export function loadSave(): Save {
   const d = defaults();
   try {
     const s = JSON.parse(localStorage.getItem("caf-save") || "null");
-    if (![1, 2].includes(s?.version)) return d;
+    if (![1, 2, 3].includes(s?.version)) return d;
     const v = s.settings;
     if (v && typeof v === "object") {
       for (const [key, min, max] of [
@@ -99,6 +104,8 @@ export function loadSave(): Save {
         "reduced",
         "vibration",
         "speechFallback",
+        "compact",
+        "leftHanded",
       ] as const)
         if (typeof v[key] === "boolean") d.settings[key] = v[key];
       if (v.keys && typeof v.keys === "object") {
@@ -122,8 +129,34 @@ export function loadSave(): Save {
     }
     for (const key of ["highScore", "arcadeWins", "progress"] as const)
       if (Number.isSafeInteger(s[key]) && s[key] >= 0)
-        d[key] = key === "progress" ? Math.min(s[key], 5) : s[key];
+        d[key] =
+          key === "progress"
+            ? s.version < 3
+              ? Math.min(s[key], 5) === 5
+                ? 8
+                : Math.min(s[key], 5)
+              : Math.min(s[key], 9)
+            : s[key];
     d.tutorial = s.tutorial === true;
+    if (Array.isArray(s.unlocked))
+      d.unlocked = [
+        ...new Set([
+          ...d.unlocked,
+          ...s.unlocked.filter(
+            (id: unknown) => typeof id === "string" && ids.includes(id),
+          ),
+        ]),
+      ];
+    if (Array.isArray(s.badges))
+      d.badges = s.badges.filter((x: unknown) =>
+        ["christmas-champion", "legacy-champion"].includes(String(x)),
+      );
+    if (
+      s.version < 3 &&
+      d.arcadeWins > 0 &&
+      !d.badges.includes("legacy-champion")
+    )
+      d.badges.push("legacy-champion");
     if (Array.isArray(s.scores))
       d.scores = s.scores
         .filter(
@@ -144,7 +177,7 @@ export function loadSave(): Save {
       ids.includes(s.campaign.fighter) &&
       Number.isInteger(s.campaign.index) &&
       s.campaign.index >= 0 &&
-      s.campaign.index <= 5 &&
+      s.campaign.index <= (s.version < 3 ? 5 : 9) &&
       Number.isSafeInteger(s.campaign.score) &&
       s.campaign.score >= 0 &&
       Number.isInteger(s.campaign.continues) &&
@@ -153,12 +186,13 @@ export function loadSave(): Save {
     )
       d.campaign = {
         fighter: s.campaign.fighter,
-        index: s.campaign.index,
+        index: s.version < 3 && s.campaign.index === 5 ? 8 : s.campaign.index,
         score: s.campaign.score,
         continues: s.campaign.continues,
         completed: false,
         survival: false,
       };
+    if (d.campaign) d.progress = d.campaign.index;
     return d;
   } catch {
     return d;
@@ -177,4 +211,19 @@ export function recordScore(save: Save, score: Score) {
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
   persist(save);
+}
+
+// Called only after a genuine Arcade match win. Training/CPU/Versus wins do not grant campaign unlocks.
+export function awardCampaignVictory(
+  save: Save,
+  campaign: Campaign,
+): string | null {
+  const bout = route(campaign.fighter)[campaign.index];
+  if (!bout?.unlock || bout.profile !== "boss") return null;
+  const id = bout.unlock,
+    fresh = !save.unlocked.includes(id);
+  if (fresh) save.unlocked.push(id);
+  if (id === "santa" && !save.badges.includes("christmas-champion"))
+    save.badges.push("christmas-champion");
+  return fresh ? id : null;
 }

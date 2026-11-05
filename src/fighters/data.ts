@@ -1,4 +1,5 @@
-export type FighterId = "jamie" | "nash" | "bucket" | "beardy" | "frost";
+export type FighterId =
+  "jamie" | "nash" | "bucket" | "beardy" | "frost" | "rob" | "santa";
 export interface FighterDef {
   id: FighterId;
   name: string;
@@ -101,8 +102,50 @@ export const frost: FighterDef = {
   bio: "The longest night has found its champion.",
   stats: [5, 4, 5],
 };
-export const fighterById = (id: FighterId) =>
-  id === "frost" ? frost : fighters.find((f) => f.id === id)!;
+export type BalanceProfile = "standard" | "boss";
+export const rob: FighterDef = {
+  ...fighters[1],
+  id: "rob",
+  name: "THE ROB FATHER",
+  title: "THE FESTIVE KINGPIN",
+  color: 0xc67d52,
+  coat: 0x642c44,
+  health: 110,
+  speed: 1.75,
+  power: 1.03,
+  reach: 1.04,
+  special: "Present Punisher",
+  bio: "The collection is due. This Christmas, he means business.",
+  stats: [5, 2, 4],
+};
+export const santa: FighterDef = {
+  ...fighters[0],
+  id: "santa",
+  name: "SANTA",
+  title: "THE NORTH POLE CHAMPION",
+  color: 0xe85e55,
+  health: 108,
+  speed: 1.95,
+  power: 1.01,
+  reach: 1.02,
+  special: "Gift Storm",
+  bio: "The final delivery is a lesson in Christmas spirit.",
+  stats: [4, 3, 4],
+};
+export const roster = [...fighters, rob, santa];
+export const fighterById = (
+  id: FighterId,
+  profile: BalanceProfile = "standard",
+): FighterDef => {
+  const base = id === "frost" ? frost : roster.find((f) => f.id === id)!;
+  if (profile === "boss" && id === "frost")
+    return { ...base, health: 112, power: 1 };
+  if (profile === "boss" && id === "rob")
+    return { ...base, health: 136, power: 1.06 };
+  if (profile === "boss" && id === "santa")
+    return { ...base, health: 144, power: 1.03 };
+  return base;
+};
 export type MoveId =
   | "punch"
   | "kick"
@@ -135,7 +178,7 @@ export interface Move {
   stun: number;
   knockback: number;
   cost: number;
-  level: "high" | "low" | "air" | "grab";
+  level: "high" | "mid" | "low" | "air" | "grab";
   kind?: MoveKind;
   launch?: number;
   dash?: number;
@@ -145,6 +188,9 @@ export interface Move {
   projectileSpeed?: number;
   cancel?: MoveId[];
   name?: string;
+  armour?: [number, number];
+  bursts?: number;
+  burstGap?: number;
 }
 const specialCancels: MoveId[] = ["special", "special2", "special3", "super"];
 export const moves: Record<MoveId, Move> = {
@@ -157,7 +203,7 @@ export const moves: Record<MoveId, Move> = {
     stun: 20,
     knockback: 5,
     cost: 0,
-    level: "high",
+    level: "mid",
     cancel: ["kick", "heavyPunch", "low", ...specialCancels],
   },
   kick: {
@@ -169,7 +215,7 @@ export const moves: Record<MoveId, Move> = {
     stun: 27,
     knockback: 9,
     cost: 0,
-    level: "high",
+    level: "mid",
     cancel: specialCancels,
   },
   heavyPunch: {
@@ -181,7 +227,7 @@ export const moves: Record<MoveId, Move> = {
     stun: 30,
     knockback: 15,
     cost: 0,
-    level: "high",
+    level: "mid",
     cancel: specialCancels,
   },
   heavyKick: {
@@ -193,7 +239,7 @@ export const moves: Record<MoveId, Move> = {
     stun: 32,
     knockback: 25,
     cost: 0,
-    level: "high",
+    level: "mid",
     launch: 3,
     cancel: ["super"],
   },
@@ -242,7 +288,7 @@ export const moves: Record<MoveId, Move> = {
     stun: 32,
     knockback: 25,
     cost: 40,
-    level: "high",
+    level: "mid",
   },
   special2: {
     startup: 10,
@@ -253,7 +299,7 @@ export const moves: Record<MoveId, Move> = {
     stun: 29,
     knockback: 22,
     cost: 30,
-    level: "high",
+    level: "mid",
   },
   special3: {
     startup: 18,
@@ -275,7 +321,7 @@ export const moves: Record<MoveId, Move> = {
     stun: 30,
     knockback: 8,
     cost: 0,
-    level: "high",
+    level: "mid",
     kind: "super",
     hits: 3,
     hitGap: 10,
@@ -304,8 +350,25 @@ export const signatures: Record<FighterId, [string, string, string, string]> = {
     "Festive Fury",
   ],
   frost: ["Frozen Bolt", "Ice Spire", "Permafrost", "Absolute Zero"],
+  rob: [
+    "Present Punisher",
+    "Sleigh Charge",
+    "Festive Collection",
+    "The Rob Father Special",
+  ],
+  santa: [
+    "Gift Storm",
+    "Reindeer Rush",
+    "North Pole Freeze",
+    "Santa’s Final Delivery",
+  ],
 };
-export function getMove(id: FighterId, move: MoveId): Move {
+export function getMove(
+  id: FighterId,
+  move: MoveId,
+  profile: BalanceProfile = "standard",
+  phase = 0,
+): Move {
   const m = { ...moves[move] };
   if (move === "grab" && id === "nash") {
     m.damage = 21;
@@ -318,6 +381,8 @@ export function getMove(id: FighterId, move: MoveId): Move {
     m.cancel = ["punch", "kick", ...specialCancels];
   }
   if (move === "super") {
+    m.knockback = 40;
+    if (profile === "boss") m.recovery = 52;
     m.name = signatures[id][3];
     if (id === "jamie") {
       m.launch = 7;
@@ -408,5 +473,113 @@ export function getMove(id: FighterId, move: MoveId): Move {
             : { kind: "shield", damage: 0, active: 5 },
       );
   }
+  if (id === "rob") {
+    if (move === "special")
+      Object.assign(m, {
+        kind: "strike",
+        range: 76,
+        startup: 13,
+        active: 20,
+        hits: 3,
+        hitGap: 7,
+        damage: 9,
+      });
+    if (move === "special2")
+      Object.assign(m, {
+        kind: "dash",
+        dash: 4,
+        range: 82,
+        startup: 18,
+        damage: 23,
+        recovery: 28,
+        ...(profile === "boss" ? { armour: [4, 10] } : {}),
+      });
+    if (move === "special3")
+      Object.assign(m, {
+        kind: "throw",
+        level: "grab",
+        range: 44,
+        startup: 12,
+        damage: 24,
+        cost: 35,
+        recovery: 30,
+      });
+    if (move === "super")
+      Object.assign(m, {
+        dash: 2,
+        range: 115,
+        hits: 4,
+        hitGap: 8,
+        active: 30,
+        damage: 12,
+        knockback: 55,
+      });
+  }
+  if (id === "santa") {
+    if (move === "heavyPunch")
+      Object.assign(m, {
+        name: "Candy Cane Crusher",
+        range: 78,
+        damage: 18,
+        startup: 15,
+        recovery: 28,
+      });
+    if (move === "special")
+      Object.assign(m, {
+        kind: "projectile",
+        range: 65,
+        damage: 10,
+        startup: 18,
+        active: 25,
+        recovery: 30,
+        bursts: profile === "boss" ? phase + 1 : 2,
+        burstGap: 10,
+        projectileSpeed: 4,
+      });
+    if (move === "special2")
+      Object.assign(m, {
+        kind: "dash",
+        dash: 5,
+        range: 78,
+        startup: 17,
+        damage: 20,
+        recovery: 29,
+      });
+    if (move === "special3")
+      Object.assign(m, {
+        kind: "wave",
+        level: "low",
+        projectileSpeed: 2.5,
+        range: 70,
+        damage: 18,
+        startup: 22,
+        recovery: 32,
+      });
+    if (move === "super")
+      Object.assign(m, {
+        range: 165,
+        hits: 4,
+        hitGap: 8,
+        active: 30,
+        damage: 12,
+        launch: 5,
+        knockback: 45,
+      });
+  }
+  if (move === "heavyKick" || move === "air") m.level = "high";
   return m;
 }
+
+export const endings: Record<FighterId, string> = {
+  jamie:
+    "Jamie faced the winter within himself, earned Santa’s respect, and brought warmth back to the village.",
+  nash: "Nash carried the last fallen present home. Even a heavyweight can have a gentle heart.",
+  bucket:
+    "Bucket tipped his neon hat. The final blizzard became a glittering Christmas snowfall.",
+  beardy:
+    "Beardy lowered his guard. For the first time that night, the forest was quiet.",
+  rob: "The Rob Father forgave every winter debt. Tonight, the collection was a feast for the whole village.",
+  santa:
+    "Santa handed the champion’s bell to the village. The finest delivery was Christmas spirit itself.",
+  frost: "Even the longest night gives way to a Christmas dawn.",
+};

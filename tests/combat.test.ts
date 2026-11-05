@@ -36,19 +36,19 @@ describe("fixed-step combat", () => {
   it("standing guard blocks high attacks and low guard blocks crouching attacks", () => {
     const m = ready(),
       hp = m.fighters[1].health;
-    run(m, 20, { punch: true }, { block: true });
+    run(m, 20, { punch: true }, { right: true });
     expect(m.fighters[1].health).toBe(hp - 1);
     const low = ready();
-    run(low, 25, { down: true, punch: true }, { block: true });
+    run(low, 25, { down: true, punch: true }, { right: true });
     expect(low.fighters[1].health).toBeLessThan(hp - 1);
     const guard = ready();
-    run(guard, 25, { down: true, punch: true }, { block: true, down: true });
+    run(guard, 25, { down: true, punch: true }, { right: true, down: true });
     expect(guard.fighters[1].health).toBe(hp - 1);
   });
   it("grabs defeat a guard at close range", () => {
     const m = ready();
     m.fighters[1].x = 390;
-    run(m, 20, { grab: true }, { block: true });
+    run(m, 55, { grab: true }, { right: true });
     expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health - 10);
     expect(m.fighters[1].state).toBe("knockdown");
   });
@@ -159,7 +159,7 @@ describe("CPU", () => {
     const m = ready(),
       c = new CPU();
     expect(c.input(m, 1, "stand")).toEqual({});
-    expect(c.input(m, 1, "block").block).toBe(true);
+    expect(c.input(m, 1, "block").right).toBe(true);
     expect(c.input(m, 1, "jump").up).toBeDefined();
   });
 });
@@ -217,9 +217,9 @@ describe("combat protections", () => {
     expect(m.fighters[1].meter).toBe(100);
   });
 });
-it("cannot guard during an attack even when both buttons are held", () => {
+it("cannot guard during an attack even when away and attack are held", () => {
   const m = ready();
-  run(m, 8, { punch: true, block: true }, { punch: true, block: true });
+  run(m, 8, { punch: true, left: true }, { punch: true, right: true });
   expect(m.fighters[0].health).toBeLessThan(103);
   expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health - 1);
 });

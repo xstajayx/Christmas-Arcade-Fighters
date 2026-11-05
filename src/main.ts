@@ -3,15 +3,24 @@ import "./style.css";
 import { Arena, type SceneBridge } from "./scenes/Arena";
 import {
   fighters,
+  roster,
   fighterById,
   type FighterId,
   signatures,
+  endings,
 } from "./fighters/data";
 import { createMatch, step, type Match } from "./combat/engine";
 import { CPU, type Dummy } from "./ai/cpu";
 import { Sound } from "./audio/sound";
 import { Controls } from "./ui/input";
-import { loadSave, persist, defaultKeys, recordScore } from "./config/storage";
+import { requestGameFullscreen } from "./ui/fullscreen";
+import {
+  loadSave,
+  persist,
+  defaultKeys,
+  recordScore,
+  awardCampaignVictory,
+} from "./config/storage";
 import { stageNames, stageSubtitles } from "./art/pixel";
 import {
   newCampaign,
@@ -37,7 +46,9 @@ type Screen =
   | "ending"
   | "scores"
   | "gameover"
-  | "credits";
+  | "credits"
+  | "more"
+  | "characters";
 type Mode = "arcade" | "versus" | "training" | "cpu" | "survival";
 const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
   document.querySelector<T>(s)!;
@@ -74,12 +85,13 @@ const tutorialGoals = [
   "Move the joystick or hold A / D.",
   "Jump with joystick up or W.",
   "Close the distance and land a Punch.",
-  "Hold Block and stop the dummy’s attack.",
+  "Hold away from the dummy to guard. Down-away guards lows.",
   "Use Special (I). Directions select other specials.",
   "Activate your Super (Space / ★).",
 ];
 let maxCombo = 0,
-  roundAnnounced = 0;
+  roundAnnounced = 0,
+  lastUnlock: string | null = null;
 
 const bridge: SceneBridge = {
   match: null,
@@ -109,9 +121,11 @@ function applySettings() {
     document.documentElement.style.setProperty(key, String(value));
   bridge.reduced = save.settings.reduced;
   controls.mapping = save.settings.keys;
+  touch.classList.toggle("touch-compact", save.settings.compact);
+  touch.classList.toggle("left-handed", save.settings.leftHanded);
   document.documentElement.style.setProperty(
     "--control-scale",
-    String(save.settings.controlSize),
+    String(save.settings.controlSize * (save.settings.compact ? 0.82 : 1)),
   );
   $("#sound-toggle").classList.toggle("is-muted", sound.muted);
   $("#sound-toggle").setAttribute("aria-pressed", String(sound.muted));
@@ -176,49 +190,104 @@ function showTitle() {
   match = null;
   bridge.match = null;
   bridge.stage = 0;
-  setScreen(
-    "title",
-    `<div class="title-vignette"></div><div class="title-content">${chip('<span class="tiny-star">✦</span> THE HOLIDAYS JUST GOT COMPETITIVE')}<div class="title-holly">✦ <span>✶</span> ✦</div><h1 class="game-title"><span>CHRISTMAS</span><span>ARCADE <em>FIGHTERS</em></span></h1><p class="title-tagline">A little festive spirit. A lot of fighting spirit.</p><div class="title-cta">${button("LET’S FIGHT <span>↗</span>", "menu", "primary large")}${button("HOW TO PLAY <span>⌘</span>", "how", "secondary")}</div><div class="title-features"><span>4 ORIGINAL FIGHTERS</span><b>✦</b><span>6 FESTIVE STAGES</span><b>✦</b><span>ENDLESS RIVALRY</span></div></div><div class="title-bottom"><div><span class="live-dot"></span> FREE TO PLAY. BUILT FOR THE GOOD TIMES.</div><div>1–2 PLAYERS <span>•</span> LOCAL PLAY</div></div>`,
-  );
+  showMenu();
 }
 function showMenu() {
   sound.setTrack("menu");
   setScreen(
     "menu",
-    `<div class="panel menu-panel">${chip("ULTIMATE EDITION · THE HOLIDAY CIRCUIT")}<h2>CHOOSE YOUR FIGHT.</h2><p>Six arenas. Four rivals. One very cold final boss.</p><div class="mode-grid ultimate-modes">${[
-      ["01", "ARCADE", "Six bouts. Frost Jamie awaits.", "arcade"],
-      ["02", "VERSUS CPU", "Choose your rival and difficulty.", "cpu"],
-      ["03", "TRAINING", "Moves, combos and hitbox lab.", "training"],
-      ["04", "LOCAL VERSUS", "Two independent control sets.", "versus"],
-      ["05", "SURVIVAL", "One life. How long can you last?", "survival"],
-      ["06", "HIGH SCORES", "Your best holiday performances.", "scores"],
+    `<div class="v3-menu"><h1 class="v3-logo">CHRISTMAS <span>ARCADE FIGHTERS</span></h1><nav class="v3-primary" aria-label="Arcade menu">${[
+      ["ARCADE", "arcade"],
+      ["VERSUS", "versusmenu"],
+      ["TRAINING", "training"],
+      ["CHARACTERS", "characters"],
+      ["OPTIONS", "settings"],
     ]
-      .map(([n, name, desc, action]) =>
-        button(
-          `<b>${n} <i>✦</i></b><strong>${name}</strong><span>${desc}</span><small>ENTER →</small>`,
-          action,
-          "mode-card",
-        ),
-      )
+      .map(([label, action]) => button(label, action, "arcade-choice"))
       .join(
         "",
-      )}</div><div class="panel-footer">${button("← BACK", "title", "text-btn")}<span>PERSONAL BEST <strong>${String(save.highScore).padStart(6, "0")}</strong></span>${button("CREDITS", "credits", "text-btn")}${button("SETTINGS ⚙", "settings", "text-btn")}</div></div>`,
+      )}</nav><div class="v3-utility">${button("FULLSCREEN", "fullscreen", "secondary")}${button("MORE MODES", "more", "secondary")}${button("HOW TO PLAY", "how", "text-btn")}<small>V3 · ARCADE EVOLUTION</small></div><p id="fullscreen-status" role="status"></p></div>`,
   );
 }
-function portrait(id: FighterId) {
+function moreModes(versusOnly = false) {
+  setScreen(
+    "more",
+    `<div class="panel compact"><h2>${versusOnly ? "VERSUS" : "MORE MODES"}</h2><div class="stack">${button("VERSUS CPU", "cpu", "primary")}${button("LOCAL VERSUS", "versus", "primary")}${versusOnly ? "" : button("SURVIVAL", "survival", "secondary") + button("HIGH SCORES", "scores", "secondary") + button("CREDITS", "credits", "text-btn")}${button("BACK", "menu", "text-btn")}</div></div>`,
+  );
+}
+function characterGallery() {
+  setScreen(
+    "characters",
+    `<div class="panel"><h2>THE FIGHTERS</h2><div class="fighters-grid">${roster.map((f) => `<div class="fighter-card ${save.unlocked.includes(f.id) ? "" : "locked"}"><img data-fighter="${f.id}" src="${portrait(f.id)}" alt="${f.name}"><strong>${f.name}</strong><p>${f.bio}</p></div>`).join("")}</div>${button("BACK", "menu", "primary")}</div>`,
+  );
+}
+async function fullscreen() {
+  const element = $("#game-wrap");
+  if (document.fullscreenElement) {
+    await document.exitFullscreen();
+    return;
+  }
+  const entered = await requestGameFullscreen(element);
+  if (!entered) {
+    document.body.classList.toggle("immersive");
+    const status = $("#fullscreen-status");
+    if (status)
+      status.textContent = "Fullscreen unavailable. Immersive layout enabled.";
+  }
+}
+const portraitCache = new Map<string, string>();
+function portrait(id: FighterId, frame = 0) {
+  const key = id + ":" + frame;
+  if (portraitCache.has(key)) return portraitCache.get(key)!;
   const canvas = document.createElement("canvas");
-  canvas.width = 192;
+  canvas.width = 256;
   canvas.height = 256;
   const texture = game?.textures.get(id).getSourceImage() as
     HTMLCanvasElement | undefined;
   if (texture)
-    canvas.getContext("2d")!.drawImage(texture, 0, 0, 192, 256, 0, 0, 192, 256);
-  return canvas.toDataURL();
+    canvas
+      .getContext("2d")!
+      .drawImage(
+        texture,
+        (frame % 8) * 256,
+        Math.floor(frame / 8) * 256,
+        256,
+        256,
+        0,
+        0,
+        256,
+        256,
+      );
+  const url = canvas.toDataURL();
+  portraitCache.set(key, url);
+  return url;
 }
+let portraitTick = 0;
+setInterval(() => {
+  if (screen !== "select" && screen !== "characters") return;
+  portraitTick++;
+  overlay
+    .querySelectorAll<HTMLImageElement>("img[data-fighter]")
+    .forEach((img) => {
+      img.src = portrait(img.dataset.fighter as FighterId, portraitTick % 2);
+    });
+}, 450);
 function select() {
+  if (screen !== "select")
+    void sound.announce("choose-your-fighter", "Choose your fighter!");
   setScreen(
     "select",
-    `<div class="panel select-panel">${chip(mode === "versus" ? "LOCAL RIVALRY" : "MEET THE NAUGHTY LIST")}<h2>CHOOSE YOUR FIGHTER.</h2><div class="fighters-grid">${fighters.map((f) => `<button class="fighter-card ${f.id === chosen ? "selected" : ""}" style="--fighter:${"#" + f.color.toString(16)}" data-action="pick-${f.id}" aria-pressed="${f.id === chosen}"><span class="fighter-number">0${fighters.indexOf(f) + 1}</span><img src="${portrait(f.id)}" alt="Pixel portrait of ${f.name}"><strong>${f.name}</strong><small>${f.title}</small><span class="select-marker">${f.id === chosen ? "PLAYER 1" : "SELECT"}</span></button>`).join("")}</div><div class="fighter-detail"><div><h3>${chosen.toUpperCase()} <span>${fighterById(chosen).special}</span></h3><p>${fighterById(chosen).bio}</p></div><div class="fighter-stats">${["POWER", "SPEED", "DEFENCE"].map((label, i) => `<span>${label} <b>${"▰".repeat(fighterById(chosen).stats[i])}<i>${"▱".repeat(5 - fighterById(chosen).stats[i])}</i></b></span>`).join("")}</div></div><div class="panel-footer">${button("← MODES", "menu", "text-btn")}${mode === "arcade" || mode === "survival" ? `<label>CPU DIFFICULTY <select id="select-difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label>` : `<label>${mode === "versus" ? "PLAYER 2" : "OPPONENT"} <select id="opponent">${fighters.map((f) => `<option value="${f.id}" ${f.id === opponent ? "selected" : ""}>${f.name}</option>`).join("")}</select></label>`}${mode === "cpu" ? `<label>DIFFICULTY <select id="cpu-difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option value="${d}" ${save.settings.difficulty === d ? "selected" : ""}>${d === "master" ? "ARCADE MASTER" : d}</option>`).join("")}</select></label>` : ""}${button("CHOOSE STAGE →", "stages", "primary")}</div>${mode === "versus" ? '<p class="versus-note">P1: WASD + J/K/L/I/U · P2: arrows + numpad 1/2/3/5/0. Two gamepads also supported. A numpad or second gamepad is required for independent P2 attacks.</p>' : ""}</div>`,
+    `<div class="panel select-panel">${chip(mode === "versus" ? "LOCAL RIVALRY" : "MEET THE NAUGHTY LIST")}<h2>CHOOSE YOUR FIGHTER.</h2><div class="fighters-grid">${roster.map((f) => `<button class="fighter-card ${f.id === chosen ? "selected" : ""} ${save.unlocked.includes(f.id) ? "" : "locked"}" ${save.unlocked.includes(f.id) ? "" : "disabled"} style="--fighter:${"#" + f.color.toString(16)}" data-action="pick-${f.id}" aria-pressed="${f.id === chosen}"><span class="fighter-number">0${roster.indexOf(f) + 1}</span><img data-fighter="${f.id}" src="${portrait(f.id)}" alt="Pixel portrait of ${f.name}"><strong>${f.name}</strong><small>${save.unlocked.includes(f.id) ? f.title : "DEFEAT BOSS IN ARCADE TO UNLOCK"}</small><span class="select-marker">${!save.unlocked.includes(f.id) ? "LOCKED" : f.id === chosen ? "PLAYER 1" : "SELECT"}</span></button>`).join("")}</div><div class="fighter-detail"><div><h3>${chosen.toUpperCase()} <span>${fighterById(chosen).special}</span></h3><p>${fighterById(chosen).bio}</p></div><div class="fighter-stats">${["POWER", "SPEED", "DEFENCE"].map((label, i) => `<span>${label} <b>${"▰".repeat(fighterById(chosen).stats[i])}<i>${"▱".repeat(5 - fighterById(chosen).stats[i])}</i></b></span>`).join("")}</div></div><div class="panel-footer">${button("← MODES", "menu", "text-btn")}${
+      mode === "arcade" || mode === "survival"
+        ? `<label>CPU DIFFICULTY <select id="select-difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label>`
+        : `<label>${mode === "versus" ? "PLAYER 2" : "OPPONENT"} <select id="opponent">${roster
+            .filter((f) => save.unlocked.includes(f.id))
+            .map(
+              (f) =>
+                `<option value="${f.id}" ${f.id === opponent ? "selected" : ""}>${f.name}</option>`,
+            )
+            .join("")}</select></label>`
+    }${mode === "cpu" ? `<label>DIFFICULTY <select id="cpu-difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option value="${d}" ${save.settings.difficulty === d ? "selected" : ""}>${d === "master" ? "ARCADE MASTER" : d}</option>`).join("")}</select></label>` : ""}${button("CHOOSE STAGE →", "stages", "primary")}</div>${mode === "versus" ? '<p class="versus-note">P1: WASD + J/K/I/U · P2: arrows + numpad 1/2/5/0. Hold away to guard. Two gamepads also supported. A numpad or second gamepad is required for independent P2 attacks.</p>' : ""}</div>`,
   );
   if (mode === "arcade" || mode === "survival")
     $("#select-difficulty").onchange = (e) => {
@@ -240,27 +309,36 @@ function select() {
 }
 function stages() {
   const circuit = mode === "arcade" || mode === "survival";
-  if (circuit) {
-    const index =
-      campaign?.index ??
-      (mode === "survival"
+  const index =
+    campaign?.index ??
+    (mode === "survival"
+      ? 0
+      : save.campaign && save.campaign.fighter !== chosen
         ? 0
-        : save.campaign && save.campaign.fighter !== chosen
-          ? 0
-          : save.progress);
-    stage = mode === "survival" ? index % 6 : route(chosen)[index].stage;
+        : save.progress);
+  const bout = circuit
+    ? mode === "survival"
+      ? survivalBout(campaign || newCampaign(chosen, 0, true))
+      : route(chosen)[index]
+    : null;
+  if (bout) {
+    stage = bout.stage;
     bridge.stage = stage;
   }
   setScreen(
     "stage",
-    `<div class="panel">${chip(circuit ? "SIX ARENAS · ONE HOLIDAY CIRCUIT" : "EVERY CORNER HAS A STORY")}<h2>${circuit ? "THE HOLIDAY CIRCUIT." : "TAKE IT OUTSIDE."}</h2><div class="stage-grid">${stageNames
-      .map((name, i) => {
-        const tag = circuit ? "div" : "button";
-        return `<${tag} ${circuit ? "" : `data-action="stage-${i}"`} class="stage-card ${stage === i ? "selected" : ""}"><span class="stage-preview stage-${i}"><img src="${stageImage(i)}" alt="${name} pixel scenery"></span><small>${circuit ? "LEVEL" : "STAGE"} 0${i + 1}${circuit && stage === i ? " · YOUR NEXT FIGHT" : ""}</small><strong>${name}</strong><span>${stageSubtitles[i]}</span></${tag}>`;
-      })
-      .join(
-        "",
-      )}</div><div class="panel-footer">${button("← FIGHTERS", "select", "text-btn")}<span>${mode === "training" ? "NO TIMER. NO PRESSURE." : circuit ? "PROGRESSIVE RIVALS · THREE CONTINUES" : "BEST OF THREE · 99 SECONDS"}</span>${button("START FIGHT →", "start", "primary")}</div></div>`,
+    `<div class="panel v3-stages"><h2>${circuit ? `LEVEL ${index + 1}${mode === "arcade" ? " / 10" : ""}` : "CHOOSE ARENA"}</h2>${
+      bout
+        ? `<div class="level-strip">${route(chosen)
+            .map(
+              (_, i) =>
+                `<span class="${i === index ? "current" : ""}">${i + 1}</span>`,
+            )
+            .join(
+              "",
+            )}</div><div class="next-challenge"><img src="${stageImage(bout.stage)}" alt="${stageNames[bout.stage]}"><h3>${fighterById(bout.opponent).name}</h3><p>${bout.challenge}</p><p>${bout.line}</p></div>`
+        : `<div class="stage-grid">${stageNames.map((name, i) => `<button data-action="stage-${i}" class="stage-card ${stage === i ? "selected" : ""}"><span class="stage-preview"><img src="${stageImage(i)}" alt="${name} pixel scenery"></span><strong>${name}</strong><span>${stageSubtitles[i]}</span></button>`).join("")}</div>${button("RANDOM ARENA", "randomstage", "secondary")}`
+    }<div class="panel-footer">${button("← FIGHTERS", "select", "text-btn")}${button("START FIGHT →", "start", "primary")}</div></div>`,
   );
 }
 function stageImage(i: number) {
@@ -281,7 +359,7 @@ function stageImage(i: number) {
 function tutorial(fromStart = false) {
   setScreen(
     "tutorial",
-    `<div class="panel tutorial-panel">${chip("A QUICK WARM-UP")}<h2>BRING THE HOLIDAY HEAT.</h2><div class="tutorial-grid"><div><h3>MOVE & DEFEND</h3><p><kbd>${keyName("left")}</kbd> <kbd>${keyName("right")}</kbd> Move <kbd>${keyName("up")}</kbd> Jump <kbd>${keyName("down")}</kbd> Crouch</p><p><kbd>${keyName("block")}</kbd> Hold to block. Crouch + block stops low attacks. Grabs beat blocking.</p></div><div><h3>MAKE AN IMPACT</h3><p><kbd>${keyName("punch")}</kbd> Punch <kbd>${keyName("kick")}</kbd> Kick <kbd>${keyName("grab")}</kbd> Grab</p><p><kbd>${keyName("special")}</kbd> Special · costs 40 meter. Fight to refill it. Crouch or jump + attack for new moves.</p></div></div><p class="help-note">Forward + Punch/Kick gives heavy attacks. Neutral Special / Forward Special / Down Special select three moves. Space or ★ spends full Super meter. On touchscreens, hold a direction and tap an attack with another finger. Gamepad: stick / D-pad, A punch, B kick, X grab, Y special, LB block. Start pauses.</p><div class="panel-footer"><span>ESC PAUSES · PLAY FAIR. FIGHT FESTIVE.</span>${button("TRY IT LIVE", "guided", "secondary")}${button(fromStart ? "GOT IT. LET’S FIGHT →" : "BACK TO THE ARCADE →", fromStart ? "begin" : "title", "primary")}</div></div>`,
+    `<div class="panel tutorial-panel">${chip("A QUICK WARM-UP")}<h2>BRING THE HOLIDAY HEAT.</h2><div class="tutorial-grid"><div><h3>MOVE & DEFEND</h3><p><kbd>${keyName("left")}</kbd> <kbd>${keyName("right")}</kbd> Move <kbd>${keyName("up")}</kbd> Jump <kbd>${keyName("down")}</kbd> Crouch</p><p>Hold away to guard. Hold down-away against lows. Overheads beat crouching guard; grabs beat guarding.</p></div><div><h3>MAKE AN IMPACT</h3><p><kbd>${keyName("punch")}</kbd> Punch <kbd>${keyName("kick")}</kbd> Kick <kbd>${keyName("grab")}</kbd> Grab</p><p><kbd>${keyName("special")}</kbd> Special · costs 40 meter. Fight to refill it. Crouch or jump + attack for new moves.</p></div></div><p class="help-note">Forward + Punch/Kick gives heavy attacks. Neutral Special / Forward Special / Down Special select three moves. Space or ★ spends full Super meter. On touchscreens, hold a direction and tap an attack with another finger. Gamepad: stick / D-pad, A punch, B kick, X grab, Y special, hold away to guard. Start pauses.</p><div class="panel-footer"><span>ESC PAUSES · PLAY FAIR. FIGHT FESTIVE.</span>${button("TRY IT LIVE", "guided", "secondary")}${button(fromStart ? "GOT IT. LET’S FIGHT →" : "BACK TO THE ARCADE →", fromStart ? "begin" : "title", "primary")}</div></div>`,
   );
 }
 function keyName(action: string) {
@@ -296,6 +374,7 @@ function start() {
 }
 function begin() {
   completed = false;
+  lastUnlock = null;
   if (mode === "arcade" || mode === "survival") {
     if (!campaign) {
       campaign = newCampaign(
@@ -331,8 +410,24 @@ function begin() {
       ? campaignDifficulty(difficulty, save.settings.difficulty)
       : difficulty,
     41 + arcadeIndex * 17,
+    campaign
+      ? (mode === "survival"
+          ? survivalBout(campaign)
+          : route(chosen)[arcadeIndex]
+        ).style
+      : "balanced",
   );
-  match = createMatch(chosen, opponent, mode === "training");
+  match = createMatch(
+    chosen,
+    opponent,
+    mode === "training",
+    campaign
+      ? (mode === "survival"
+          ? survivalBout(campaign)
+          : route(chosen)[arcadeIndex]
+        ).profile
+      : "standard",
+  );
   if (mode === "survival") {
     match.roundsToWin = 1;
     if (carryHealth !== null) match.fighters[0].health = carryHealth;
@@ -343,16 +438,31 @@ function begin() {
     tutorialStep = 0;
   }
   roundAnnounced = 0;
+  lastUnlock = null;
   maxCombo = 0;
   sound.setTrack(
-    opponent === "frost"
-      ? "boss"
-      : (["village", "pier", "workshop", "forest", "rooftops", "fortress"][
-          stage
-        ] as Parameters<Sound["setTrack"]>[0]),
+    opponent === "santa"
+      ? "santa"
+      : opponent === "rob"
+        ? "rob"
+        : opponent === "frost"
+          ? "boss"
+          : ([
+              "village",
+              "pier",
+              "workshop",
+              "forest",
+              "rooftops",
+              "fortress",
+              "rob",
+              "santa",
+            ][stage] as Parameters<Sound["setTrack"]>[0]),
   );
-  if (opponent === "frost")
-    void sound.announce("final-boss", "Final boss. Frost Jamie.");
+  if (opponent === "frost" || match.fighters[1].profile === "boss")
+    void sound.announce(
+      opponent === "santa" ? "final-battle" : "boss-battle",
+      opponent === "santa" ? "Final battle!" : "Boss battle!",
+    );
   bridge.match = match;
   bridge.stage = stage;
   paused = false;
@@ -363,8 +473,12 @@ function begin() {
   buildHud();
 }
 function buildHud() {
-  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><div class="name-line"><b>${chosen.toUpperCase()}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><div class="name-line"><b>${fighterById(opponent).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1">${fighterById(chosen).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2">${fighterById(opponent).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? '<div class="training-bar"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span><label><input type="checkbox" id="show-hitboxes"> HITBOXES</label><button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button></div>' : ""}`;
+  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><div class="name-line"><b>${fighterById(chosen).name}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><div class="name-line"><b>${fighterById(opponent).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><button id="fullscreen-game" aria-label="Fullscreen game">⛶</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1">${fighterById(chosen).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2">${fighterById(opponent).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? '<div class="training-bar"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span><label><input type="checkbox" id="show-hitboxes"> HITBOXES</label><button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button><button id="inspect-sprites">SPRITE INSPECTOR</button></div>' : ""}`;
   $("#pause-button").onclick = () => pause();
+  $("#fullscreen-game").onclick = () => {
+    void fullscreen();
+  };
+  bridge.preview = undefined;
   if (mode === "training") {
     $<HTMLSelectElement>("#dummy").value = dummy;
     $("#dummy").onchange = (e) =>
@@ -379,6 +493,43 @@ function buildHud() {
         }
     };
     $("#reset-training").onclick = () => begin();
+    $("#inspect-sprites").onclick = () => {
+      const old = $("#sprite-inspector");
+      if (old) {
+        old.remove();
+        bridge.preview = undefined;
+        return;
+      }
+      bridge.debug = true;
+      const panel = document.createElement("div");
+      panel.id = "sprite-inspector";
+      panel.innerHTML =
+        '<label>ATLAS <select id="inspect-atlas"><option value="base">Base poses</option><option value="special">Signature poses</option></select></label><label>FRAME <input id="inspect-frame" type="range" min="0" max="47" value="0"></label><output id="inspect-number">0</output><button id="inspect-close">CLOSE INSPECTOR</button>';
+      hud.append(panel);
+      $<HTMLInputElement>("#inspect-frame").max = String(
+        game.textures.get(chosen).frameTotal - 2,
+      );
+      bridge.preview = { frame: 0, special: false };
+      $("#inspect-atlas").onchange = (e) => {
+        const special = (e.target as HTMLSelectElement).value === "special";
+        $<HTMLInputElement>("#inspect-frame").max = special
+          ? "23"
+          : String(game.textures.get(chosen).frameTotal - 2);
+        $<HTMLInputElement>("#inspect-frame").value = "0";
+        bridge.preview = { frame: 0, special };
+      };
+      $("#inspect-frame").oninput = (e) => {
+        bridge.preview = {
+          frame: Number((e.target as HTMLInputElement).value),
+          special: $<HTMLSelectElement>("#inspect-atlas").value === "special",
+        };
+        $("#inspect-number").textContent = String(bridge.preview.frame);
+      };
+      $("#inspect-close").onclick = () => {
+        panel.remove();
+        bridge.preview = undefined;
+      };
+    };
   }
   if (tutorialActive) {
     const banner = document.createElement("div");
@@ -404,7 +555,7 @@ function renderHud() {
     const f = m.fighters[i],
       id = `p${i + 1}`;
     $(`#health-${id}`).style.width =
-      `${(f.health / fighterById(f.id).health) * 100}%`;
+      `${(f.health / fighterById(f.id, f.profile).health) * 100}%`;
     $(`#health-${id}`).classList.toggle("danger", f.health < 30);
     $(`#meter-${id}`).style.width = f.meter + "%";
     $(`#special-${id}`).classList.toggle("ready", f.meter >= 40);
@@ -456,10 +607,14 @@ function renderHud() {
         : "ALL LESSONS COMPLETE. BRING THE HOLIDAY HEAT.";
     $("#finish-tutorial").hidden = tutorialStep < 6;
   }
-  if (m.phase === "intro" && m.phaseFrame < 65 && opponent === "frost") {
-    $("#announcement strong")!.textContent = "FROST JAMIE";
+  if (
+    m.phase === "intro" &&
+    m.phaseFrame < 65 &&
+    (opponent === "frost" || m.fighters[1].profile === "boss")
+  ) {
+    $("#announcement strong")!.textContent = fighterById(opponent).name;
     $("#announcement span")!.textContent =
-      route(chosen)[5].line || "THE LONGEST NIGHT BEGINS.";
+      route(chosen)[arcadeIndex].line || "THE LONGEST NIGHT BEGINS.";
   }
 }
 function tick(delta: number) {
@@ -500,18 +655,19 @@ function tick(delta: number) {
     if (ev.type === "super") {
       const signature = signatures[match.fighters[ev.player || 0].id][3];
       void sound.announce(
-        signature.toLowerCase().replaceAll(" ", "-"),
+        signature.toLowerCase().replace(/[’']/g, "").replaceAll(" ", "-"),
         signature,
       );
       $("#move-callout").textContent =
         signatures[match.fighters[ev.player || 0].id][3];
     }
     if (ev.type === "counter") void sound.announce("counter", "Counter!");
-    if (ev.type === "bossPhase")
-      void sound.announce(
-        "final-boss",
-        `Frost Jamie. Phase ${match.fighters[1].bossPhase + 1}.`,
-      );
+    if (ev.type === "bossPhase") {
+      const boss = match.fighters[ev.player || 1];
+      if (boss.id === "santa" && boss.bossPhase === 2)
+        sound.setTrack("santaFinal");
+      void sound.announce(boss.id, "Boss phase!");
+    }
     if (ev.type === "fight") void sound.announce("fight", "Fight!");
     if (ev.type === "ko") void sound.announce("knockout", "Knockout!");
     if (ev.firstHit) void sound.announce("first-hit", "First hit!");
@@ -595,7 +751,7 @@ function settings() {
   }
   setScreen(
     "settings",
-    `<div class="panel settings-panel">${chip("TUNE YOUR ARCADE")}<h2>MAKE YOURSELF AT HOME.</h2><div class="settings-grid"><div><label>MUSIC <input id="music" type="range" min="0" max="1" step=".05" value="${save.settings.music}"></label><label>SOUND EFFECTS <input id="effects" type="range" min="0" max="1" step=".05" value="${save.settings.effects}"></label><label>ANNOUNCER <input id="announcer" type="range" min="0" max="1" step=".05" value="${save.settings.announcer}"></label><label>OPTIONAL DEVICE VOICE <input id="speech-fallback" type="checkbox" ${save.settings.speechFallback ? "checked" : ""}></label><p class="small">Original robotic voice pack installed. Device voice is an optional fallback.</p><label>DIFFICULTY <select id="difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label><label>TOUCH CONTROL SIZE <input id="control-size" type="range" min=".7" max="1.3" step=".1" value="${save.settings.controlSize}"></label><label>CONTROL OPACITY <input id="control-opacity" type="range" min=".2" max="1" step=".05" value="${save.settings.controlOpacity}"></label><label>CONTROL INSET <input id="control-inset" type="range" min="0" max="60" step="5" value="${save.settings.controlInset}"></label><label>CONTROL LIFT <input id="control-lift" type="range" min="0" max="60" step="5" value="${save.settings.controlLift}"></label><label>HAPTICS (SUPPORTED DEVICES) <input id="vibration" type="checkbox" ${save.settings.vibration ? "checked" : ""}></label><label>REDUCED VISUAL EFFECTS <input id="reduced" type="checkbox" ${save.settings.reduced ? "checked" : ""}></label><label>MUTE ALL AUDIO <input id="mute" type="checkbox" ${save.settings.muted ? "checked" : ""}></label></div><div><h3>KEYBOARD · PLAYER 1</h3><p class="small">Select a key, then press its replacement.</p><div class="key-grid">${Object.keys(
+    `<div class="panel settings-panel">${chip("TUNE YOUR ARCADE")}<h2>MAKE YOURSELF AT HOME.</h2><div class="settings-grid"><div><label>MUSIC <input id="music" type="range" min="0" max="1" step=".05" value="${save.settings.music}"></label><label>SOUND EFFECTS <input id="effects" type="range" min="0" max="1" step=".05" value="${save.settings.effects}"></label><label>ANNOUNCER <input id="announcer" type="range" min="0" max="1" step=".05" value="${save.settings.announcer}"></label><label>OPTIONAL DEVICE VOICE <input id="speech-fallback" type="checkbox" ${save.settings.speechFallback ? "checked" : ""}></label><p class="small">Original robotic voice pack installed. Device voice is an optional fallback.</p><label>DIFFICULTY <select id="difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label><label>TOUCH CONTROL SIZE <input id="control-size" type="range" min=".7" max="1.3" step=".1" value="${save.settings.controlSize}"></label><label>CONTROL OPACITY <input id="control-opacity" type="range" min=".2" max="1" step=".05" value="${save.settings.controlOpacity}"></label><label>CONTROL INSET <input id="control-inset" type="range" min="0" max="60" step="5" value="${save.settings.controlInset}"></label><label>CONTROL LIFT <input id="control-lift" type="range" min="0" max="60" step="5" value="${save.settings.controlLift}"></label><label>COMPACT TOUCH LAYOUT <input id="compact-controls" type="checkbox" ${save.settings.compact ? "checked" : ""}></label><label>LEFT-HANDED TOUCH LAYOUT <input id="left-handed" type="checkbox" ${save.settings.leftHanded ? "checked" : ""}></label><label>HAPTICS (SUPPORTED DEVICES) <input id="vibration" type="checkbox" ${save.settings.vibration ? "checked" : ""}></label><label>REDUCED VISUAL EFFECTS <input id="reduced" type="checkbox" ${save.settings.reduced ? "checked" : ""}></label><label>MUTE ALL AUDIO <input id="mute" type="checkbox" ${save.settings.muted ? "checked" : ""}></label></div><div><h3>KEYBOARD · PLAYER 1</h3><p class="small">Select a key, then press its replacement.</p><div class="key-grid">${Object.keys(
       defaultKeys,
     )
       .map((k) =>
@@ -609,6 +765,14 @@ function settings() {
         "",
       )}</div><p id="remap-message" class="small" role="status">P2 uses arrows + numpad. Gamepads map automatically.</p>${button("RESET KEY BINDINGS", "resetkeys", "text-btn")}</div></div><div class="panel-footer"><span>SAVED AUTOMATICALLY · NO PERSONAL DATA COLLECTED</span>${button("DONE →", "backsettings", "primary")}</div></div>`,
   );
+  for (const [id, key] of [
+    ["compact-controls", "compact"],
+    ["left-handed", "leftHanded"],
+  ] as const)
+    $("#" + id).onchange = (e) => {
+      save.settings[key] = (e.target as HTMLInputElement).checked;
+      applySettings();
+    };
   for (const key of ["music", "effects", "announcer"] as const)
     $<HTMLInputElement>("#" + key).oninput = (e) => {
       save.settings[key] = Number((e.target as HTMLInputElement).value);
@@ -670,7 +834,7 @@ function endRun(result: "champion" | "defeat") {
     mode: mode === "survival" ? "survival" : "arcade",
     score: campaign.score,
     result,
-    bouts: result === "champion" ? 6 : campaign.index,
+    bouts: result === "champion" ? 10 : campaign.index,
   });
   if (mode === "arcade") {
     save.campaign = null;
@@ -696,6 +860,8 @@ function results() {
     save.highScore = Math.max(save.highScore, points);
     if (campaign && (mode === "arcade" || mode === "survival")) {
       if (win) {
+        if (mode === "arcade")
+          lastUnlock = awardCampaignVictory(save, campaign);
         advance(campaign, true, points);
         carryHealth = Math.min(
           fighterById(chosen).health,
@@ -737,7 +903,7 @@ function results() {
     winner === "draw" ? "DRAW" : fighterById(winner).name + " WINS!";
   setScreen(
     "results",
-    `<div class="panel compact result-panel">${chip(circuit ? `${mode.toUpperCase()} · ${mode === "survival" ? "WAVE" : "LEVEL"} ${arcadeIndex + 1}${mode === "arcade" ? " OF 6" : ""}` : "A FESTIVE FRIENDLY")}<span class="result-star">${win ? "✦" : "❄"}</span><h2>${title}</h2><p>${win ? "That’s the Christmas spirit." : mode === "survival" ? "The run is over. Your score is saved." : "The winter hasn’t won yet."}</p><div class="result-score"><span>ROUNDS <b>${match.fighters[0].wins} — ${match.fighters[1].wins}</b></span><span>RUN SCORE <b>${String(campaign?.score || points).padStart(6, "0")}</b></span></div>${win ? `<div class="bonus-grid">TIME +${bonus.time} · HEALTH +${bonus.health} · COMBO +${bonus.combo}</div>` : ""}${campaign && win && !campaign.completed ? `<p class="next-bout">NEXT: ${fighterById((mode === "survival" ? survivalBout(campaign) : route(chosen)[campaign.index]).opponent).name} · ${stageNames[(mode === "survival" ? survivalBout(campaign) : route(chosen)[campaign.index]).stage]}</p><span class="next-stage-preview"><img src="${stageImage((mode === "survival" ? survivalBout(campaign) : route(chosen)[campaign.index]).stage)}" alt="Next arena preview"></span>` : ""}<div class="stack">${circuit && win ? button(campaign?.completed ? "THE CHRISTMAS CHAMPION →" : "NEXT CHALLENGER →", campaign?.completed ? "ending" : "next", "primary") : ""}${mode === "arcade" && !win ? button(`CONTINUE / REMATCH · ${campaign?.continues || 0} LEFT <span id="continue-clock">20</span>`, "continue", "primary") : mode === "survival" ? "" : button("REMATCH ↻", "rematch", win ? "secondary" : "primary")}${button("CHOOSE FIGHTER", "select", "secondary")}${button("BACK TO MENU", "quit", "text-btn")}</div></div>`,
+    `<div class="panel compact result-panel">${chip(circuit ? `${mode.toUpperCase()} · ${mode === "survival" ? "WAVE" : "LEVEL"} ${arcadeIndex + 1}${mode === "arcade" ? " OF 10" : ""}` : "A FESTIVE FRIENDLY")}${lastUnlock ? `<div class="unlock-notice" role="status">${fighterById(lastUnlock as FighterId).name} UNLOCKED · BALANCED PLAYABLE FIGHTER${lastUnlock === "rob" ? " · CHECKPOINT · CONTINUES REFILLED TO 3" : ""}</div>` : ""}<span class="result-star">${win ? "✦" : "❄"}</span><h2>${title}</h2><p>${win ? "That’s the Christmas spirit." : mode === "survival" ? "The run is over. Your score is saved." : "The winter hasn’t won yet."}</p><div class="result-score"><span>ROUNDS <b>${match.fighters[0].wins} — ${match.fighters[1].wins}</b></span><span>RUN SCORE <b>${String(campaign?.score || points).padStart(6, "0")}</b></span></div>${win ? `<div class="bonus-grid">TIME +${bonus.time} · HEALTH +${bonus.health} · COMBO +${bonus.combo}</div>` : ""}${campaign && win && !campaign.completed ? `<p class="next-bout">NEXT: ${fighterById((mode === "survival" ? survivalBout(campaign) : route(chosen)[campaign.index]).opponent).name} · ${stageNames[(mode === "survival" ? survivalBout(campaign) : route(chosen)[campaign.index]).stage]}</p><span class="next-stage-preview"><img src="${stageImage((mode === "survival" ? survivalBout(campaign) : route(chosen)[campaign.index]).stage)}" alt="Next arena preview"></span>` : ""}<div class="stack">${circuit && win ? button(campaign?.completed ? "THE CHRISTMAS CHAMPION →" : "NEXT CHALLENGER →", campaign?.completed ? "ending" : "next", "primary") : ""}${mode === "arcade" && !win ? button(`CONTINUE / REMATCH · ${campaign?.continues || 0} LEFT <span id="continue-clock">20</span>`, "continue", "primary") : mode === "survival" ? "" : button("REMATCH ↻", "rematch", win ? "secondary" : "primary")}${button("CHOOSE FIGHTER", "select", "secondary")}${button("BACK TO MENU", "quit", "text-btn")}</div></div>`,
   );
   if (mode === "arcade" && !win) {
     continueRemaining = 20;
@@ -766,7 +932,7 @@ function ending() {
   );
   setScreen(
     "ending",
-    `<div class="panel compact result-panel">${chip("FROST JAMIE HAS FALLEN")}<span class="result-star">★</span><h2>CHRISTMAS CHAMPION.</h2><p>${chosen === "jamie" ? "Jamie faced the winter within himself and brought warmth back to the village." : chosen === "nash" ? "Nash carried the last fallen present home. Even a heavyweight can have a gentle heart." : chosen === "bucket" ? "Bucket tipped his neon hat. The blizzard became a glittering Christmas snowfall." : "Beardy lowered his guard. For the first time that night, the forest was quiet."}</p><p>Six arenas. A winter conquered. One well-earned Christmas feast.</p><p class="small">SCORE ${campaign?.score || 0} · ARCADE CLEARS ${save.arcadeWins}</p>${button("HIGH SCORES →", "scores", "primary")}${button("ONE MORE CHRISTMAS →", "newrun", "secondary")}${button("CREDITS", "credits", "text-btn")}</div>`,
+    `<div class="panel compact result-panel">${chip("SANTA HAS BEEN DEFEATED")}<span class="result-star">★</span><h2>CHRISTMAS ARCADE CHAMPION.</h2><p>${endings[chosen]}</p><p>Ten challenges. The Rob Father and Santa unlocked. One well-earned Christmas feast.</p><p class="small">SCORE ${campaign?.score || 0} · ARCADE CLEARS ${save.arcadeWins}</p>${button("HIGH SCORES →", "scores", "primary")}${button("ONE MORE CHRISTMAS →", "newrun", "secondary")}${button("CREDITS", "credits", "text-btn")}</div>`,
   );
 }
 function highScores() {
@@ -790,6 +956,7 @@ overlay.addEventListener("click", (e) => {
   sound.play("menu");
   const a = b.dataset.action!;
   if (a.startsWith("pick-")) {
+    if (!save.unlocked.includes(a.slice(5))) return;
     chosen = a.slice(5) as FighterId;
     void sound.announce(chosen, fighterById(chosen).name);
     select();
@@ -809,6 +976,17 @@ overlay.addEventListener("click", (e) => {
   }
   const actions: Record<string, () => void> = {
     title: showTitle,
+    randomstage: () => {
+      stage = Math.floor(Math.random() * stageNames.length);
+      bridge.stage = stage;
+      stages();
+    },
+    more: () => moreModes(),
+    versusmenu: () => moreModes(true),
+    characters: characterGallery,
+    fullscreen: () => {
+      void fullscreen();
+    },
     menu: showMenu,
     how: () => tutorial(),
     arcade: () => {
@@ -897,6 +1075,8 @@ overlay.addEventListener("click", (e) => {
     },
     rematch: begin,
     next: () => {
+      if (!campaign?.completed)
+        void sound.announce("new-challenger", "New challenger!");
       if (campaign?.completed) ending();
       else begin();
     },
@@ -1057,10 +1237,11 @@ Object.defineProperty(window, "__CAF__", {
   get: () => ({
     build: __BUILD_ID__,
     rendering: {
+      scene: (game.scene.getScene("Arena") as Arena)?.diagnostics,
       frames: Object.fromEntries(
         fighters.map((f) => [f.id, game.textures.get(f.id).frameTotal]),
       ),
-      stages: Array.from({ length: 6 }, (_, i) =>
+      stages: Array.from({ length: 8 }, (_, i) =>
         [0, 1, 2].every((layer) => game.textures.exists(`stage-${i}-${layer}`)),
       ),
       audio: sound.state,
