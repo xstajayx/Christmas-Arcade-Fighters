@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "style": "Original generated pixel-art production candidates; motion/likeness continuity remains under review",
   "referenceOnly": [
     "a9d9d195-a844-41dc-be2c-88127373ecfe.webp",
@@ -12,10 +12,12 @@
       "jamie",
       "nash",
       "bucket",
-      "beardy"
+      "beardy",
+      "rob",
+      "santa"
     ],
     "boss": "frost",
-    "frameWidth": 192,
+    "frameWidth": 256,
     "frameHeight": 256,
     "sourceGrid": [
       8,
@@ -29,7 +31,7 @@
     "runtimeFrameCount": 48,
     "bossFrameCount": 32,
     "pivot": [
-      0.45,
+      0.5,
       0.953125
     ],
     "scale": 0.75,
@@ -40,7 +42,9 @@
       "atlases/nash.webp",
       "atlases/bucket.webp",
       "atlases/beardy.webp",
-      "atlases/frost.webp"
+      "atlases/frost.webp",
+      "atlases/rob.webp",
+      "atlases/santa.webp"
     ],
     "supplement": {
       "file": "atlases/actions.webp",
@@ -60,7 +64,7 @@
         "throw reach",
         "throw release"
       ],
-      "baselineCorrectionY": -12,
+      "baselineCorrectionY": 0,
       "runtimeFrames": [
         32,
         33,
@@ -139,7 +143,9 @@
         "atlases/special-nash.webp",
         "atlases/special-bucket.webp",
         "atlases/special-beardy.webp",
-        "atlases/special-frost.webp"
+        "atlases/special-frost.webp",
+        "atlases/special-rob.webp",
+        "atlases/special-santa.webp"
       ],
       "frameSize": [
         256,
@@ -164,10 +170,54 @@
         "recovery"
       ],
       "pivot": [
+        0.5,
+        0.953125
+      ],
+      "sourcePivot": [
         0.41015625,
         0.953125
+      ],
+      "runtimeGrid": [
+        8,
+        3
       ]
-    }
+    },
+    "sourceFrameWidth": 192,
+    "bosses": [
+      "frost",
+      "rob",
+      "santa"
+    ],
+    "playableUnlocks": {
+      "rob": {
+        "level": 8,
+        "standardHealth": 110,
+        "bossHealth": 136
+      },
+      "santa": {
+        "level": 10,
+        "standardHealth": 108,
+        "bossHealth": 144
+      }
+    },
+    "normalization": {
+      "cell": [
+        256,
+        256
+      ],
+      "defaultFeet": [
+        128,
+        244
+      ],
+      "metadata": "Phaser Texture.customData.frames; explicit offset/pivot for wide or tall poses",
+      "mirroring": "complement horizontal pivot",
+      "extraction": "exact source cells; connected body plus edge fringe; no cross-row sampling",
+      "collision": "independent world-space hit/hurt/push boxes"
+    },
+    "bossRuntimeGrid": [
+      8,
+      4
+    ]
   },
   "stages": {
     "ids": [
@@ -176,7 +226,9 @@
       "workshop",
       "forest",
       "rooftops",
-      "fortress"
+      "fortress",
+      "collection-hall",
+      "santas-throne"
     ],
     "atlas": "stages/arenas.webp",
     "sourceSize": [
@@ -204,17 +256,49 @@
       "forest mist",
       "pier wheel lights",
       "rooftop sleigh",
-      "fortress wind"
+      "fortress wind",
+      "chimney smoke",
+      "water glints",
+      "furnace glow",
+      "branch movement",
+      "boss phase glow"
     ],
-    "qualityGate": "Backplates are illustrated; bands are not fully hand-separated object depth masks. Additional foreground/object animation remains an art-production gate."
+    "qualityGate": "Backplates are illustrated; bands are not fully hand-separated object depth masks. Additional foreground/object animation remains an art-production gate.",
+    "additionalAtlas": {
+      "file": "stages/v3-arenas.webp",
+      "grid": [
+        1,
+        2
+      ],
+      "sourceSize": [
+        1536,
+        1024
+      ]
+    }
   },
   "audio": {
     "manifest": "voices/manifest.json",
     "voiceGenerator": "eSpeak NG Emscripten, development only, plus FFmpeg",
-    "voiceQuality": "Original robotic synthesized pack; human/studio direction and listening sign-off remain open",
-    "music": "Nine original procedural looping themes in src/audio/sound.ts",
+    "voiceQuality": "31 integrated robotic fallback WAVs; professional projected performance and listening approval remain open",
+    "music": "Twelve original procedural themes including Rob Father, Santa and final phase",
     "effects": "Distinct normals, guards, counters, character/variant specials and Supers",
     "pipeline": "npm run voices:generate",
     "fallback": "Optional device speech, disabled by default and explicitly labelled"
+  },
+  "camera": {
+    "startZoom": 1.25,
+    "zoomRange": [
+      0.82,
+      1.28
+    ],
+    "worldBounds": [
+      -90,
+      890,
+      -60,
+      500
+    ],
+    "hud": "fixed DOM, independent of world zoom",
+    "debug": "training sprite inspector and camera viewport overlay",
+    "koMaxZoom": 1.32
   }
 }

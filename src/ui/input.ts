@@ -6,7 +6,6 @@ export const p2Keys: Record<string, string> = {
   down: "ArrowDown",
   punch: "Numpad1",
   kick: "Numpad2",
-  block: "Numpad3",
   special: "Numpad5",
   grab: "Numpad0",
   special2: "Numpad6",
@@ -96,7 +95,6 @@ export class Controls {
       out.down ||= pad.axes[1] > 0.5 || b(13);
       out.punch ||= b(0);
       out.kick ||= b(1);
-      out.block ||= b(4);
       out.special ||= b(3);
       out.grab ||= b(2);
       out.super ||= b(5);
@@ -126,7 +124,7 @@ export class Controls {
     this.padNav = nav;
   }
   mountTouch(container: HTMLElement) {
-    container.innerHTML = `<div class="dpad joystick" aria-label="Virtual joystick"><button class="touch-key up" data-action="up" aria-label="Jump">▲</button><button class="touch-key left" data-action="left" aria-label="Move left">◀</button><span class="dpad-center joystick-knob"></span><button class="touch-key right" data-action="right" aria-label="Move right">▶</button><button class="touch-key down" data-action="down" aria-label="Crouch">▼</button></div><div class="actions"><button class="touch-key super" data-action="super">★<span>SUPER</span></button><button class="touch-key grab" data-action="grab">G<span>GRAB</span></button><button class="touch-key block" data-action="block">B<span>BLOCK</span></button><button class="touch-key punch" data-action="punch">P<span>PUNCH</span></button><button class="touch-key kick" data-action="kick">K<span>KICK</span></button><button class="touch-key special" data-action="special">✦<span>SPECIAL</span></button></div>`;
+    container.innerHTML = `<div class="dpad joystick" aria-label="Virtual joystick"><button class="touch-key up" data-action="up" aria-label="Jump">▲</button><button class="touch-key left" data-action="left" aria-label="Move left">◀</button><span class="dpad-center joystick-knob"></span><button class="touch-key right" data-action="right" aria-label="Move right">▶</button><button class="touch-key down" data-action="down" aria-label="Crouch">▼</button></div><div class="actions"><button class="touch-key super" data-action="super">★<span>SUPER</span></button><button class="touch-key grab" data-action="grab">G<span>GRAB</span></button><button class="touch-key punch" data-action="punch">P<span>PUNCH</span></button><button class="touch-key kick" data-action="kick">K<span>KICK</span></button><button class="touch-key special" data-action="special">✦<span>SPECIAL</span></button></div>`;
     const joy = container.querySelector<HTMLElement>(".joystick")!;
     const move = (e: PointerEvent) => {
       const r = joy.getBoundingClientRect(),

@@ -111,6 +111,51 @@
       "id": "festive-fury",
       "file": "festive-fury.wav",
       "duration": 0.9607709750566893
+    },
+    {
+      "id": "choose-your-fighter",
+      "file": "choose-your-fighter.wav",
+      "duration": 1.1126984126984127
+    },
+    {
+      "id": "new-challenger",
+      "file": "new-challenger.wav",
+      "duration": 0.8764625850340136
+    },
+    {
+      "id": "boss-battle",
+      "file": "boss-battle.wav",
+      "duration": 0.712108843537415
+    },
+    {
+      "id": "final-battle",
+      "file": "final-battle.wav",
+      "duration": 0.8835827664399093
+    },
+    {
+      "id": "rob",
+      "file": "rob.wav",
+      "duration": 0.9429931972789115
+    },
+    {
+      "id": "santa",
+      "file": "santa.wav",
+      "duration": 0.5544217687074829
+    },
+    {
+      "id": "the-rob-father-special",
+      "file": "the-rob-father-special.wav",
+      "duration": 1.3617233560090702
+    },
+    {
+      "id": "santas-final-delivery",
+      "file": "santas-final-delivery.wav",
+      "duration": 1.5394557823129251
+    },
+    {
+      "id": "frost",
+      "file": "frost.wav",
+      "duration": 0.8352834467120182
     }
   ],
   "required": [
@@ -135,7 +180,28 @@
     "santa-slam",
     "reindeer-rampage",
     "bucket-blizzard",
-    "festive-fury"
+    "festive-fury",
+    "choose-your-fighter",
+    "new-challenger",
+    "boss-battle",
+    "final-battle",
+    "rob",
+    "santa",
+    "the-rob-father-special",
+    "santas-final-delivery",
+    "frost"
   ],
-  "generator": "eSpeak NG Emscripten (build-time only) + FFmpeg"
+  "generator": "eSpeak NG Emscripten (build-time only) + FFmpeg",
+  "text": {
+    "choose-your-fighter": "Choose your fighter!",
+    "new-challenger": "New challenger!",
+    "boss-battle": "Boss battle!",
+    "final-battle": "Final battle!",
+    "rob": "The Rob Father!",
+    "santa": "Santa!",
+    "the-rob-father-special": "The Rob Father Special!",
+    "santas-final-delivery": "Santa's Final Delivery!",
+    "frost": "Frost Jamie!"
+  },
+  "productionStatus": "Robotic fallback pack. Professional projected human/neural arcade performance NOT produced or approved."
 }

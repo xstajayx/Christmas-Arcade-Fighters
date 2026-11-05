@@ -1,3 +1,5 @@
+> Historical Ultimate Edition checkpoint. Current V3 work and acceptance gates are tracked in [V3_PROGRESS.md](V3_PROGRESS.md).
+
 # Ultimate Edition production checklist
 
 Status as of 5 November 2026. **This is a playable production candidate, not a premium-release sign-off.** “Complete” below describes a tested implementation, not automatic artistic approval. Main’s published files have not been replaced by this branch.

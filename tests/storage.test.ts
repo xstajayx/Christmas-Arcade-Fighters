@@ -26,7 +26,7 @@ it("validates settings and tolerates unavailable writes", () => {
   const s = loadSave();
   expect(s.settings.music).toBe(1);
   expect(s.settings.difficulty).toBe("normal");
-  expect(s.progress).toBe(5);
+  expect(s.progress).toBe(8);
   expect(s.highScore).toBe(0);
   expect(() => persist(s)).not.toThrow();
 });
@@ -41,13 +41,13 @@ it("migrates old controls and preserves a validated resumed campaign", () => {
       }),
   });
   const s = loadSave();
-  expect(s.version).toBe(2);
+  expect(s.version).toBe(3);
   expect(s.settings.keys.super).toBe("Space");
   expect(s.settings.keys.special2).toBe("KeyO");
-  expect(new Set(Object.values(s.settings.keys)).size).toBe(12);
+  expect(new Set(Object.values(s.settings.keys)).size).toBe(11);
   expect(s.campaign).toMatchObject({
     fighter: "bucket",
-    index: 5,
+    index: 8,
     score: 4200,
     continues: 1,
   });

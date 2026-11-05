@@ -7,7 +7,10 @@ export type MusicTrack =
   | "rooftops"
   | "fortress"
   | "boss"
-  | "ending";
+  | "ending"
+  | "rob"
+  | "santa"
+  | "santaFinal";
 const themes: Record<MusicTrack, number[]> = {
   menu: [64, 67, 71, 67, 69, 67, 64, 62, 60, 64, 67, 64, 65, 64, 62, 59],
   village: [60, 64, 67, 72, 71, 67, 64, 62, 60, 67, 69, 64, 62, 59, 60, 67],
@@ -17,6 +20,9 @@ const themes: Record<MusicTrack, number[]> = {
   rooftops: [65, 69, 72, 76, 74, 72, 69, 67, 65, 72, 74, 69, 67, 64, 65, 60],
   fortress: [55, 58, 62, 67, 66, 62, 58, 54, 55, 62, 66, 70, 67, 62, 58, 54],
   boss: [52, 55, 58, 64, 63, 58, 55, 51, 52, 58, 63, 67, 64, 58, 55, 51],
+  rob: [48, 55, 60, 63, 62, 55, 51, 48, 55, 60, 67, 63, 62, 58, 55, 51],
+  santa: [60, 67, 72, 76, 74, 71, 67, 64, 60, 64, 69, 72, 76, 74, 67, 62],
+  santaFinal: [48, 60, 67, 72, 70, 67, 63, 60, 51, 63, 70, 75, 72, 67, 60, 55],
   ending: [60, 64, 67, 72, 76, 74, 72, 67, 69, 72, 76, 79, 76, 72, 67, 60],
 };
 export class Sound {
@@ -137,6 +143,15 @@ export class Sound {
     } else if (type === "super") {
       this.tone(110, 0.7, v, "sawtooth", 880);
       this.tone(440, 0.7, v * 0.6, "triangle", 1320);
+    } else if (type === "grab") {
+      this.tone(150, 0.1, v * 0.6, "triangle", 90);
+    } else if (type === "throw") {
+      this.tone(95, 0.25, v, "sawtooth", 32);
+      this.tone(260, 0.16, v * 0.5, "square", 65);
+    } else if (type === "throwBreak") {
+      this.tone(800, 0.16, v, "triangle", 1300);
+    } else if (type === "landing") {
+      this.tone(65, 0.07, v * 0.35, "triangle", 30);
     } else if (type === "bossPhase") {
       this.tone(70, 0.6, v, "sawtooth", 280);
     } else if (type === "jump") this.tone(190, 0.15, v * 0.5, "triangle", 440);

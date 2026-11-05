@@ -54,3 +54,9 @@ A source-HTML deployment cannot be fixed by clearing browser cache alone. It mus
 ## Latest observed repository run — 5 November 2026
 
 Latest fetched `main` is `2d6a384`; its intervening commits added and then deleted a separate Jekyll workflow, leaving the tracked file tree identical to the prior repair base. [Check and deploy arcade run 41926643345](https://github.com/xstajayx/Christmas-Arcade-Fighters/actions/runs/41926643345), triggered by that deletion, is publicly marked **Cancelled**; its annotation says it was canceled by the repository owner. It is not evidence of successful publication. The earlier protection/configuration failures above remain historical evidence; current Pages settings and live site health cannot be inspected through this environment’s blocked API/live destinations. The Ultimate feature branch has not been deployed.
+
+## V3 preparation — current published baseline
+
+The Ultimate PR was merged as `5da0449` (PR #2). Its latest public [Check and deploy arcade run 42093184431](https://github.com/xstajayx/Christmas-Arcade-Fighters/actions/runs/42093184431) is marked **Success**, including the configure and deploy jobs. The preceding cancellation/configuration failures above are historical, not the latest observed deployment outcome.
+
+V3 is based on that merged version and preserves the existing `npm ci` → checks/build → tested `dist/` → protected Pages deployment contract. V3’s feature branch has not been published. The environment still excludes `api.github.com` and `xstajayx.github.io`, so local direct live inspection/PR creation remains unavailable; public workflow success is attributed to GitHub’s run, not represented as a direct local live-site check.

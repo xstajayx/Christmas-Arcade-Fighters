@@ -6,13 +6,19 @@ import {
   hurtbox,
   type Match,
 } from "../combat/engine";
-import { fighterById, signatures } from "../fighters/data";
+import { fighterById } from "../fighters/data";
 import { animationFrame } from "../animation/clips";
+import {
+  initialFraming,
+  targetFraming,
+  followFraming,
+} from "../camera/framing";
 export interface SceneBridge {
   match: Match | null;
   stage: number;
   reduced: boolean;
   debug?: boolean;
+  preview?: { frame: number; special: boolean };
   update: (delta: number) => void;
   ready: () => void;
   progress: (value: number) => void;
@@ -42,24 +48,60 @@ export class Arena extends Phaser.Scene {
     makeFighter("bucket", 645, -1),
   ];
   private debugGraphic!: Phaser.GameObjects.Graphics;
-  private cutin!: Phaser.GameObjects.Container;
-  private cutinText!: Phaser.GameObjects.Text;
-  private cutinPortrait!: Phaser.GameObjects.Sprite;
+  private framing = initialFraming();
+  private aura!: Phaser.GameObjects.Graphics;
+  private scenery!: Phaser.GameObjects.Graphics;
+  private smoke: Phaser.GameObjects.Ellipse[] = [];
+  private inspect!: Phaser.GameObjects.Text;
   private errors: string[] = [];
+  get diagnostics() {
+    return {
+      camera: { ...this.framing },
+      sprites: this.sprites.map((s) => ({
+        x: s.x,
+        y: s.y,
+        originX: s.originX,
+        originY: s.originY,
+        frame: s.frame.name,
+        texture: s.texture.key,
+        bounds: {
+          x: s.getBounds().x,
+          y: s.getBounds().y,
+          w: s.getBounds().width,
+          h: s.getBounds().height,
+        },
+      })),
+    };
+  }
   constructor(private bridge: SceneBridge) {
     super("Arena");
   }
   preload() {
-    for (const id of ["jamie", "nash", "bucket", "beardy", "frost"])
+    for (const id of [
+      "jamie",
+      "nash",
+      "bucket",
+      "beardy",
+      "frost",
+      "rob",
+      "santa",
+    ])
       this.load.image(
         `atlas-${id}`,
         `${import.meta.env.BASE_URL}atlases/${id}.webp`,
       );
-    for (const id of ["jamie", "nash", "bucket", "beardy", "frost"])
-      this.load.spritesheet(
-        `special-${id}`,
+    for (const id of [
+      "jamie",
+      "nash",
+      "bucket",
+      "beardy",
+      "frost",
+      "rob",
+      "santa",
+    ])
+      this.load.image(
+        `raw-special-${id}`,
         `${import.meta.env.BASE_URL}atlases/special-${id}.webp`,
-        { frameWidth: 256, frameHeight: 256 },
       );
     this.load.image(
       "walk-supplement",
@@ -68,6 +110,10 @@ export class Arena extends Phaser.Scene {
     this.load.image(
       "action-supplement",
       `${import.meta.env.BASE_URL}atlases/actions.webp`,
+    );
+    this.load.image(
+      "v3-environment",
+      `${import.meta.env.BASE_URL}stages/v3-arenas.webp`,
     );
     this.load.image(
       "environment-atlas",
@@ -89,23 +135,10 @@ export class Arena extends Phaser.Scene {
       return;
     }
     createArt(this, (n) => this.bridge.progress(70 + n * 0.3));
-    // Frost Jamie has a separate original icy atlas and special choreography.
-    const source = this.textures
-      .get(this.textures.exists("atlas-frost") ? "atlas-frost" : "jamie")
-      .getSourceImage() as HTMLCanvasElement;
-    const c = document.createElement("canvas");
-    c.width = source.width;
-    c.height = source.height;
-    c.getContext("2d")!.drawImage(source, 0, 0);
-    const texture = this.textures.addCanvas("frost", c)!;
-    this.textures.addSpriteSheet("", texture, {
-      frameWidth: 192,
-      frameHeight: 256,
-    });
-    if (this.textures.exists("atlas-frost"))
-      this.textures.remove("atlas-frost");
     for (let i = 0; i < 3; i++)
-      this.layers.push(this.add.image(400, 225, `stage-0-${i}`));
+      this.layers.push(
+        this.add.image(400, 225, `stage-0-${i}`).setDisplaySize(1020, 580),
+      );
     for (let i = 0; i < 7; i++) {
       this.gifts.push(
         this.add.container(i * 120, 314, [
@@ -162,7 +195,15 @@ export class Arena extends Phaser.Scene {
         vy: 0,
       });
     const g = this.make.graphics({ x: 0, y: 0 }, false);
-    for (const id of ["jamie", "nash", "bucket", "beardy", "frost"]) {
+    for (const id of [
+      "jamie",
+      "nash",
+      "bucket",
+      "beardy",
+      "frost",
+      "rob",
+      "santa",
+    ]) {
       g.clear();
       const col = fighterById(id as "jamie").color;
       if (id === "jamie") {
@@ -194,6 +235,11 @@ export class Arena extends Phaser.Scene {
         g.lineStyle(2, 0xf9e9b9);
         g.strokeRect(2, 8, 30, 16);
       }
+      if (id === "santa" || id === "rob") {
+        g.fillStyle(0xffe4a1);
+        g.fillRect(16, 6, 4, 20);
+        g.fillRect(0, 14, 36, 3);
+      }
       g.generateTexture("orb-" + id, 40, 32);
     }
     g.clear();
@@ -223,28 +269,30 @@ export class Arena extends Phaser.Scene {
         this.add.sprite(0, 0, "orb-jamie").setDepth(7).setVisible(false),
       );
     this.debugGraphic = this.add.graphics().setDepth(20);
-    this.cutinPortrait = this.add
-      .sprite(240, 290, "jamie", 24)
-      .setScale(0.9)
-      .setOrigin(0.45, 0.95);
-    this.cutinText = this.add
-      .text(400, 182, "", {
-        fontFamily: "Impact, monospace",
-        fontSize: "30px",
-        color: "#ffe09b",
-        stroke: "#162039",
-        strokeThickness: 5,
+    this.aura = this.add.graphics().setDepth(4);
+    this.scenery = this.add.graphics().setDepth(2);
+    for (let i = 0; i < 8; i++)
+      this.smoke.push(
+        this.add
+          .ellipse(
+            95 + (i % 2) * 5,
+            70 - i * 10,
+            14 + i * 2,
+            9 + i * 2,
+            0xc8d3e1,
+            0.1,
+          )
+          .setDepth(2),
+      );
+    this.inspect = this.add
+      .text(8, 420, "", {
+        fontFamily: "monospace",
+        fontSize: "9px",
+        backgroundColor: "#071424",
+        color: "#ffdf86",
       })
-      .setOrigin(0, 0.5);
-    this.cutin = this.add
-      .container(0, 0, [
-        this.add.rectangle(400, 225, 800, 450, 0x08101e, 0.82),
-        this.add.rectangle(400, 215, 800, 134, 0x243650, 0.88),
-        this.cutinPortrait,
-        this.cutinText,
-      ])
-      .setDepth(35)
-      .setVisible(false);
+      .setScrollFactor(0)
+      .setDepth(50);
     this.booted = true;
     this.bridge.ready();
   }
@@ -288,21 +336,36 @@ export class Arena extends Phaser.Scene {
     const display = m?.fighters || this.demos;
     display.forEach((f, i) => {
       const spr = this.sprites[i];
-      const special =
-        f.state === "attack" &&
-        (f.move?.startsWith("special") || f.move === "super");
+      const preview = i === 0 ? this.bridge.preview : undefined;
+      const signatureThrow =
+        f.state === "throwing" &&
+        (f.id === "rob" || f.move?.startsWith("special"));
+      const special = preview
+        ? preview.special
+        : signatureThrow ||
+          (f.state === "attack" &&
+            (f.move?.startsWith("special") || f.move === "super"));
       const textureKey = special ? `special-${f.id}` : f.id;
       if (spr.texture.key !== textureKey) spr.setTexture(textureKey);
-      spr.setOrigin(special ? 105 / 256 : 0.45, 0.953125);
-      const frame = animationFrame(
-        f,
-        m ? f.animTick : Math.floor(time / 16.67),
-      );
+      spr.setOrigin(0.5, 244 / 256);
+      const frame = preview
+        ? preview.frame
+        : animationFrame(f, m ? f.animTick : Math.floor(time / 16.67));
       spr
         .setFrame(Math.min(frame, spr.texture.frameTotal - 2))
         .setPosition(Math.round(f.x), Math.round(f.y + 50))
         .setFlipX(f.facing < 0)
         .setScale(0.75);
+      const metadata = (
+        spr.texture.customData as {
+          frames?: { pivot: { x: number; y: number } }[];
+        }
+      ).frames?.[Math.min(frame, spr.texture.frameTotal - 2)];
+      if (metadata)
+        spr.setOrigin(
+          f.facing < 0 ? 1 - metadata.pivot.x / 256 : metadata.pivot.x / 256,
+          metadata.pivot.y / 256,
+        );
       if (f.guardFrames > 0) spr.setTint(0xc4eedc);
       else if (f.state === "hitstun" && !this.bridge.reduced)
         spr.setTint(0xffb2a2);
@@ -324,7 +387,7 @@ export class Arena extends Phaser.Scene {
       }
     });
     this.ambientDots.forEach((light, i) => {
-      light.visible = this.stageId < 3 || this.stageId === 5;
+      light.visible = this.stageId < 3 || this.stageId >= 5;
       light.alpha = this.bridge.reduced
         ? 0.65
         : 0.4 + Math.sin(time / 400 + i) * 0.3;
@@ -337,7 +400,12 @@ export class Arena extends Phaser.Scene {
       sprite.visible = !!p;
       if (p)
         sprite
-          .setTexture("orb-" + p.style)
+          .setTexture(
+            "orb-" +
+              (p.style === "santa" && p.data.kind === "wave"
+                ? "frost"
+                : p.style),
+          )
           .setPosition(p.x, p.y + 50)
           .setFlipX(p.vx < 0)
           .setScale(p.data.kind === "wave" ? 1.35 : 1);
@@ -362,16 +430,22 @@ export class Arena extends Phaser.Scene {
             "super",
             "projectile",
             "bossPhase",
+            "grab",
+            "throw",
+            "throwBreak",
+            "landing",
           ].includes(e.type)
         ) {
           const color =
             e.type === "block"
               ? 0x8fc9e8
-              : e.type === "counter"
-                ? 0xffe7a4
-                : e.type === "special" || e.type === "super"
-                  ? fighterById(m.fighters[e.player || 0].id).color
-                  : 0xffce86;
+              : e.type === "landing"
+                ? 0xc4d8e8
+                : e.type === "counter"
+                  ? 0xffe7a4
+                  : e.type === "special" || e.type === "super"
+                    ? fighterById(m.fighters[e.player || 0].id).color
+                    : 0xffce86;
           let remaining = this.bridge.reduced
             ? 3
             : e.strength === "heavy" || e.type === "super"
@@ -402,21 +476,122 @@ export class Arena extends Phaser.Scene {
             );
         }
       }
-    this.cutin.visible = !!m && m.cinematic > 0;
-    if (m && m.cinematic > 0) {
-      const f = m.fighters[m.cinematicPlayer];
-      this.cutinPortrait
-        .setTexture(`special-${f.id}`, 18)
-        .setCrop(0, 0, 224, 256)
-        .setOrigin(105 / 256, 0.953125)
-        .clearTint();
-      this.cutinText.setText(
-        `${fighterById(f.id).name}\n${signatures[f.id][3].toUpperCase()}`,
+    this.aura.clear();
+    this.scenery.clear();
+    this.smoke.forEach((s, i) => {
+      s.visible = this.stageId === 0;
+      s.y = 70 - ((time / 90 + i * 10) % 85);
+      s.x = 95 + (this.bridge.reduced ? 0 : Math.sin(time / 1000 + i) * 10);
+      s.alpha = this.bridge.reduced ? 0.08 : 0.14;
+    });
+    if (this.stageId === 1)
+      for (let i = 0; i < 9; i++)
+        this.scenery
+          .fillStyle(0xffd797, 0.06)
+          .fillRect(
+            290 + Math.sin(time / 1000 + i) * 12,
+            200 + i * 6,
+            250 - i * 14,
+            2,
+          );
+    if (this.stageId === 2)
+      this.scenery
+        .fillStyle(
+          0xffa34e,
+          this.bridge.reduced ? 0.08 : 0.12 + Math.sin(time / 170) * 0.03,
+        )
+        .fillEllipse(105, 285, 165, 110);
+    if (this.stageId === 3)
+      for (let i = 0; i < 4; i++)
+        this.scenery
+          .lineStyle(2, 0x98c4d8, 0.12)
+          .lineBetween(
+            i * 245,
+            80,
+            i * 245 + 32 + Math.sin(time / 900 + i) * 2,
+            102,
+          );
+    const boss = m?.fighters.find((f) => f.profile === "boss");
+    if (this.stageId >= 5 && boss)
+      this.scenery
+        .fillStyle(
+          boss.id === "santa"
+            ? [0xffd27e, 0xf37f93, 0x8adfff][boss.bossPhase]
+            : 0x8acfff,
+          0.04 + boss.bossPhase * 0.035,
+        )
+        .fillEllipse(400, 345, 700, 140);
+    for (const f of m?.fighters || [])
+      if (f.id === "santa" && f.move === "heavyPunch" && f.state === "attack") {
+        const x = f.x + f.facing * 45,
+          y = f.y - 130;
+        this.scenery.lineStyle(7, 0xfff2e0).lineBetween(x, y, x, y + 42);
+        for (let k = 0; k < 5; k++)
+          this.scenery
+            .lineStyle(3, 0xc93548)
+            .lineBetween(x - 3, y + k * 8, x + 3, y + k * 8 + 4);
+        this.scenery
+          .lineStyle(7, 0xfff2e0)
+          .strokeCircle(x + f.facing * 6, y, 7);
+      }
+    const activeSuper = m?.fighters.find(
+      (f) => f.move === "super" && f.state === "attack",
+    );
+    if (m && (m.cinematic > 0 || activeSuper)) {
+      const f = activeSuper || m.fighters[m.cinematicPlayer],
+        color = fighterById(f.id).color;
+      this.aura
+        .fillStyle(color, this.bridge.reduced ? 0.08 : 0.16)
+        .fillCircle(f.x, f.y - 35, 75);
+      this.aura
+        .lineStyle(this.bridge.reduced ? 1 : 3, color, 0.65)
+        .strokeEllipse(f.x, f.y - 40, 110, 180);
+      this.layers.forEach((l) => l.setTint(0x9da8bb));
+    } else this.layers.forEach((l) => l.clearTint());
+    const target = m ? targetFraming(m.fighters) : { x: 400, y: 225, zoom: 1 };
+    if (m?.phase === "roundOver" && m.phaseFrame < 30 && !this.bridge.reduced)
+      target.zoom = Math.min(1.32, target.zoom * 1.025);
+    this.framing = followFraming(
+      this.framing,
+      target,
+      delta,
+      this.bridge.reduced,
+    );
+    this.cameras.main
+      .setZoom(this.framing.zoom)
+      .centerOn(this.framing.x, this.framing.y);
+    const hudPoint = this.cameras.main.getWorldPoint(8, 430);
+    this.inspect
+      .setPosition(hudPoint.x, hudPoint.y)
+      .setScale(1 / this.framing.zoom);
+    this.inspect.setVisible(!!this.bridge.debug);
+    if (this.bridge.debug && m)
+      this.inspect.setText(
+        m.fighters
+          .map(
+            (f, i) =>
+              `${i + 1} ${f.id} ${f.state} frame ${animationFrame(f)} origin ${Math.round(this.sprites[i].originX * 256)},${Math.round(this.sprites[i].originY * 256)}`,
+          )
+          .join("  |  ") + `  CAM ${this.framing.zoom.toFixed(2)}`,
       );
-    }
     this.debugGraphic.clear();
+    if (this.bridge.debug) {
+      const c = this.cameras.main.worldView;
+      this.debugGraphic
+        .lineStyle(1, 0x52caff)
+        .strokeRect(c.x + 2, c.y + 2, c.width - 4, c.height - 4);
+    }
     if (this.bridge.debug && m) {
       for (const f of m.fighters) {
+        const spr = this.sprites[m.fighters.indexOf(f)],
+          bounds = spr.getBounds();
+        this.debugGraphic
+          .lineStyle(1, 0xf7d366)
+          .strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        this.debugGraphic.lineStyle(2, 0xffffff).strokeCircle(f.x, f.y + 50, 3);
+        this.debugGraphic
+          .lineStyle(1, 0xc891ff)
+          .strokeRect(f.x - 19.5, f.y - 117, 39, 167);
         const h = hurtbox(f),
           a = activeHitbox(f);
         this.debugGraphic

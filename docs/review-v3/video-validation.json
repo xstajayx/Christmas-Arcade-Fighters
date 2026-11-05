@@ -1,0 +1,50 @@
+[
+  {
+    "file": "gameplay.webm",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 960,
+        "height": 666,
+        "r_frame_rate": "25/1"
+      }
+    ],
+    "format": {
+      "duration": "76.800000",
+      "size": "23507601"
+    }
+  },
+  {
+    "file": "rob-boss.webm",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 960,
+        "height": 666,
+        "r_frame_rate": "25/1"
+      }
+    ],
+    "format": {
+      "duration": "46.120000",
+      "size": "13930620"
+    }
+  },
+  {
+    "file": "santa-boss.webm",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 960,
+        "height": 666,
+        "r_frame_rate": "25/1"
+      }
+    ],
+    "format": {
+      "duration": "45.960000",
+      "size": "14773084"
+    }
+  }
+]

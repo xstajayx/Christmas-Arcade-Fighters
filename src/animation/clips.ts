@@ -39,14 +39,13 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
     const back =
       (f.previous.left && f.facing === 1) ||
       (f.previous.right && f.facing === -1);
-    sequence =
-      f.id === "frost"
-        ? back
-          ? [5, 4, 3, 2]
-          : [2, 3, 4, 5]
-        : back
-          ? clips.back
-          : clips.forward;
+    sequence = ["frost", "rob", "santa"].includes(f.id)
+      ? back
+        ? [5, 4, 3, 2]
+        : [2, 3, 4, 5]
+      : back
+        ? clips.back
+        : clips.forward;
     time = tick;
     speed = f.state === "dash" ? 4 : f.id === "nash" ? 5 : 3;
   }
@@ -82,12 +81,23 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
             : clips.victory;
     speed = 14;
   }
+  if (f.state === "throwing") {
+    if (f.id === "rob") return 12 + Math.min(5, Math.floor(f.frame / 4));
+    if (f.move?.startsWith("special"))
+      return (
+        (f.move === "special2" ? 6 : 12) + Math.min(5, Math.floor(f.frame / 4))
+      );
+    return ["frost", "santa"].includes(f.id)
+      ? [26, 14, 27, 13][Math.min(3, Math.floor(f.frame / 7))]
+      : [26, 38, 38, 39][Math.min(3, Math.floor(f.frame / 7))];
+  }
+  if (f.state === "thrown") return f.frame < 8 ? 22 : f.frame < 18 ? 7 : 29;
   if (f.state === "defeat") {
     sequence = clips.defeat;
     speed = 9;
   }
   if (f.state === "attack" && f.move) {
-    const move = getMove(f.id, f.move),
+    const move = getMove(f.id, f.move, f.profile, f.bossPhase),
       kick = ["kick", "heavyKick", "low", "air"].includes(f.move);
     sequence =
       f.move === "grab" || move.kind === "throw"
@@ -112,9 +122,13 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
                 ),
             );
     if (f.move === "low")
-      return f.id === "frost" ? [6, 15, 6, 19, 20, 6][phase] : clips.low[phase];
+      return ["frost", "rob", "santa"].includes(f.id)
+        ? [6, 15, 6, 19, 20, 6][phase]
+        : clips.low[phase];
     if (f.move === "air")
-      return f.id === "frost" ? clips.kick[phase] : clips.air[phase];
+      return ["frost", "rob", "santa"].includes(f.id)
+        ? clips.kick[phase]
+        : clips.air[phase];
     if (f.move === "heavyPunch") return clips.heavyPunch[phase];
     if (f.move === "heavyKick") return clips.heavyKick[phase];
     if (f.move.startsWith("special") || f.move === "super") {
