@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "status": "original synthesized robotic announcer; listening and device review required",
+  "clips": [
+    {
+      "id": "jamie",
+      "file": "jamie.wav",
+      "duration": 0.4345578231292517
+    },
+    {
+      "id": "nash",
+      "file": "nash.wav",
+      "duration": 0.40439909297052157
+    },
+    {
+      "id": "bucket",
+      "file": "bucket.wav",
+      "duration": 0.48643990929705216
+    },
+    {
+      "id": "beardy",
+      "file": "beardy.wav",
+      "duration": 0.5156009070294785
+    },
+    {
+      "id": "round-one",
+      "file": "round-one.wav",
+      "duration": 0.7841269841269841
+    },
+    {
+      "id": "round-two",
+      "file": "round-two.wav",
+      "duration": 0.7714739229024943
+    },
+    {
+      "id": "final-round",
+      "file": "final-round.wav",
+      "duration": 0.8424943310657597
+    },
+    {
+      "id": "fight",
+      "file": "fight.wav",
+      "duration": 0.45147392290249433
+    },
+    {
+      "id": "first-hit",
+      "file": "first-hit.wav",
+      "duration": 0.7490249433106576
+    },
+    {
+      "id": "counter",
+      "file": "counter.wav",
+      "duration": 0.5899319727891157
+    },
+    {
+      "id": "combo",
+      "file": "combo.wav",
+      "duration": 0.6105215419501134
+    },
+    {
+      "id": "super",
+      "file": "super.wav",
+      "duration": 0.5027210884353741
+    },
+    {
+      "id": "knockout",
+      "file": "knockout.wav",
+      "duration": 0.5271655328798186
+    },
+    {
+      "id": "perfect",
+      "file": "perfect.wav",
+      "duration": 0.6636734693877551
+    },
+    {
+      "id": "you-win",
+      "file": "you-win.wav",
+      "duration": 0.5921541950113378
+    },
+    {
+      "id": "you-lose",
+      "file": "you-lose.wav",
+      "duration": 0.6625850340136055
+    },
+    {
+      "id": "final-boss",
+      "file": "final-boss.wav",
+      "duration": 0.8090249433106576
+    },
+    {
+      "id": "congratulations",
+      "file": "congratulations.wav",
+      "duration": 1.2704308390022676
+    },
+    {
+      "id": "santa-slam",
+      "file": "santa-slam.wav",
+      "duration": 0.9476643990929705
+    },
+    {
+      "id": "reindeer-rampage",
+      "file": "reindeer-rampage.wav",
+      "duration": 1.0732426303854876
+    },
+    {
+      "id": "bucket-blizzard",
+      "file": "bucket-blizzard.wav",
+      "duration": 0.9624943310657597
+    },
+    {
+      "id": "festive-fury",
+      "file": "festive-fury.wav",
+      "duration": 0.9607709750566893
+    }
+  ],
+  "required": [
+    "jamie",
+    "nash",
+    "bucket",
+    "beardy",
+    "round-one",
+    "round-two",
+    "final-round",
+    "fight",
+    "first-hit",
+    "counter",
+    "combo",
+    "super",
+    "knockout",
+    "perfect",
+    "you-win",
+    "you-lose",
+    "final-boss",
+    "congratulations",
+    "santa-slam",
+    "reindeer-rampage",
+    "bucket-blizzard",
+    "festive-fury"
+  ],
+  "generator": "eSpeak NG Emscripten (build-time only) + FFmpeg"
+}

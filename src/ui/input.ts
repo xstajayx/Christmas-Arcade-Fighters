@@ -9,6 +9,9 @@ export const p2Keys: Record<string, string> = {
   block: "Numpad3",
   special: "Numpad5",
   grab: "Numpad0",
+  special2: "Numpad6",
+  special3: "Numpad7",
+  super: "Numpad4",
 };
 export class Controls {
   keys = new Set<string>();
@@ -18,11 +21,14 @@ export class Controls {
   onNavigate = (_direction: string) => {};
   private padPause = false;
   private padNav = false;
+  private touchHeld = new Set<string>();
+  private keyLatched = new Set<string>();
+  private touchLatched = new Set<string>();
   constructor(mapping: Record<string, string>) {
     this.mapping = mapping;
     window.addEventListener("keydown", (e) => {
-      const editing = (e.target as HTMLElement).matches("input,select");
-      if (editing) return;
+      if (e.target instanceof Element && e.target.matches("input,select"))
+        return;
       if (
         ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(
           e.code,
@@ -30,6 +36,7 @@ export class Controls {
       )
         e.preventDefault();
       this.keys.add(e.code);
+      this.keyLatched.add(e.code);
       if (e.code === "Escape" && !e.repeat) this.onPause();
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.code));
@@ -38,28 +45,51 @@ export class Controls {
       if (document.hidden) this.clear();
     });
   }
+  private refresh() {
+    const before = new Set(this.touchHeld);
+    this.touchHeld.clear();
+    for (const value of this.touch.values())
+      for (const action of value.split(","))
+        if (action) this.touchHeld.add(action);
+    for (const action of this.touchHeld)
+      if (!before.has(action)) this.touchLatched.add(action);
+    document
+      .querySelectorAll<HTMLElement>(".touch-key")
+      .forEach((el) =>
+        el.classList.toggle(
+          "pressed",
+          this.touchHeld.has(el.dataset.action || ""),
+        ),
+      );
+  }
   clear() {
     this.keys.clear();
+    this.keyLatched.clear();
+    this.touchLatched.clear();
     this.touch.clear();
-    document
-      .querySelectorAll(".touch-key")
-      .forEach((el) => el.classList.remove("pressed"));
+    this.refresh();
+    document.documentElement.style.setProperty("--joy-x", "0px");
+    document.documentElement.style.setProperty("--joy-y", "0px");
   }
   get(index = 0): Input {
-    const map = index === 0 ? this.mapping : p2Keys;
-    const out: Input = {};
+    const map = index === 0 ? this.mapping : p2Keys,
+      out: Input = {};
     for (const [action, code] of Object.entries(map))
       if (
         this.keys.has(code) ||
-        (index === 0 && [...this.touch.values()].includes(action))
+        this.keyLatched.has(code) ||
+        (index === 0 &&
+          (this.touchHeld.has(action) || this.touchLatched.has(action)))
       )
         (out as Record<string, boolean>)[action] = true;
+    out.heavy = this.keys.has(index === 0 ? "ShiftLeft" : "Numpad8");
+    out.dash = this.keys.has(index === 0 ? "ShiftRight" : "Numpad9");
     const pads = Array.from(navigator.getGamepads?.() || []).filter(
       (p): p is Gamepad => !!p,
     );
     const pad = pads[index];
     if (pad) {
-      const b = (n: number) => pad.buttons[n]?.pressed;
+      const b = (n: number) => !!pad.buttons[n]?.pressed;
       out.left ||= pad.axes[0] < -0.35 || b(14);
       out.right ||= pad.axes[0] > 0.35 || b(15);
       out.up ||= pad.axes[1] < -0.5 || b(12);
@@ -69,7 +99,12 @@ export class Controls {
       out.block ||= b(4);
       out.special ||= b(3);
       out.grab ||= b(2);
+      out.super ||= b(5);
+      out.heavy ||= b(7);
+      out.dash ||= b(6);
     }
+    for (const code of Object.values(map)) this.keyLatched.delete(code);
+    if (index === 0) this.touchLatched.clear();
     return out;
   }
   pollMenu() {
@@ -91,20 +126,56 @@ export class Controls {
     this.padNav = nav;
   }
   mountTouch(container: HTMLElement) {
-    container.innerHTML = `<div class="dpad"><button class="touch-key up" data-action="up" aria-label="Jump">▲</button><button class="touch-key left" data-action="left" aria-label="Move left">◀</button><span class="dpad-center">✦</span><button class="touch-key right" data-action="right" aria-label="Move right">▶</button><button class="touch-key down" data-action="down" aria-label="Crouch">▼</button></div><div class="actions"><button class="touch-key grab" data-action="grab">G<span>GRAB</span></button><button class="touch-key block" data-action="block">B<span>BLOCK</span></button><button class="touch-key punch" data-action="punch">P<span>PUNCH</span></button><button class="touch-key kick" data-action="kick">K<span>KICK</span></button><button class="touch-key special" data-action="special">✦<span>SPECIAL</span></button></div>`;
+    container.innerHTML = `<div class="dpad joystick" aria-label="Virtual joystick"><button class="touch-key up" data-action="up" aria-label="Jump">▲</button><button class="touch-key left" data-action="left" aria-label="Move left">◀</button><span class="dpad-center joystick-knob"></span><button class="touch-key right" data-action="right" aria-label="Move right">▶</button><button class="touch-key down" data-action="down" aria-label="Crouch">▼</button></div><div class="actions"><button class="touch-key super" data-action="super">★<span>SUPER</span></button><button class="touch-key grab" data-action="grab">G<span>GRAB</span></button><button class="touch-key block" data-action="block">B<span>BLOCK</span></button><button class="touch-key punch" data-action="punch">P<span>PUNCH</span></button><button class="touch-key kick" data-action="kick">K<span>KICK</span></button><button class="touch-key special" data-action="special">✦<span>SPECIAL</span></button></div>`;
+    const joy = container.querySelector<HTMLElement>(".joystick")!;
+    const move = (e: PointerEvent) => {
+      const r = joy.getBoundingClientRect(),
+        x = (e.clientX - r.left - r.width / 2) / (r.width / 2),
+        y = (e.clientY - r.top - r.height / 2) / (r.height / 2),
+        actions = [];
+      if (x < -0.25) actions.push("left");
+      if (x > 0.25) actions.push("right");
+      if (y < -0.3) actions.push("up");
+      if (y > 0.3) actions.push("down");
+      this.touch.set(e.pointerId, actions.join(","));
+      document.documentElement.style.setProperty(
+        "--joy-x",
+        Math.max(-30, Math.min(30, x * 30)) + "px",
+      );
+      document.documentElement.style.setProperty(
+        "--joy-y",
+        Math.max(-30, Math.min(30, y * 30)) + "px",
+      );
+      this.refresh();
+    };
+    joy.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      joy.setPointerCapture(e.pointerId);
+      move(e);
+    });
+    joy.addEventListener("pointermove", (e) => {
+      if (joy.hasPointerCapture(e.pointerId)) move(e);
+    });
+    const releaseJoy = (e: PointerEvent) => {
+      this.touch.delete(e.pointerId);
+      this.refresh();
+      document.documentElement.style.setProperty("--joy-x", "0px");
+      document.documentElement.style.setProperty("--joy-y", "0px");
+    };
+    for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
+      joy.addEventListener(event, releaseJoy as EventListener);
     for (const b of container.querySelectorAll<HTMLButtonElement>(
-      "[data-action]",
+      ".actions [data-action]",
     )) {
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         b.setPointerCapture(e.pointerId);
         this.touch.set(e.pointerId, b.dataset.action!);
-        b.classList.add("pressed");
+        this.refresh();
       });
       const release = (e: PointerEvent) => {
         this.touch.delete(e.pointerId);
-        if (![...this.touch.values()].includes(b.dataset.action!))
-          b.classList.remove("pressed");
+        this.refresh();
       };
       b.addEventListener("pointerup", release);
       b.addEventListener("pointercancel", release);

@@ -1843,3 +1843,411 @@ input[type="checkbox"] {
     transition: none;
   }
 }
+/* Ultimate systems use the existing responsive arcade shell. */
+.ultimate-modes {
+  gap: 10px;
+  margin-top: 12px;
+}
+.ultimate-modes .mode-card {
+  min-height: 110px;
+  padding: 12px;
+  gap: 7px;
+}
+.ultimate-modes .mode-card strong {
+  font-size: clamp(16px, 2cqw, 25px);
+}
+.ultimate-modes .mode-card > b {
+  font-size: 8px;
+}
+.ultimate-modes .mode-card i {
+  font-size: 15px;
+}
+.ultimate-modes .mode-card > span {
+  font-size: 9px;
+}
+.ultimate-modes .mode-card small {
+  font-size: 7px;
+}
+.asset-warning {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #872c32;
+  color: #ffe9ba;
+  padding: 6px;
+  z-index: 100;
+  font-size: 10px;
+  text-align: center;
+}
+.super-meter-row {
+  position: absolute;
+  bottom: 2.4%;
+  left: 3%;
+  right: 3%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7cqw;
+  letter-spacing: 0.5px;
+  color: #adc1d5;
+}
+.super-meter-row .ready {
+  color: #ffdb77;
+  text-shadow: 0 0 8px #ffae52;
+}
+#move-callout {
+  position: absolute;
+  top: 27%;
+  width: 100%;
+  text-align: center;
+  font-size: 1.2cqw;
+  color: #ffe6a8;
+  text-shadow: 2px 2px #152136;
+}
+.bonus-grid {
+  font-size: 8px;
+  color: #d8b46b;
+  line-height: 1.8;
+  margin-bottom: 9px;
+}
+.next-bout {
+  font-size: 8px !important;
+  line-height: 1.6 !important;
+}
+.result-panel .stack {
+  gap: 8px;
+}
+.result-panel .result-score {
+  margin: 12px 0;
+  padding: 9px;
+}
+.leaderboard {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(8px, 1.05cqw, 14px);
+  margin: 22px 0;
+}
+.leaderboard th {
+  color: #e2c887;
+  text-align: left;
+  padding: 9px;
+  border-bottom: 1px solid #55616a;
+}
+.leaderboard td {
+  padding: 9px;
+  border-bottom: 1px solid #334456;
+  color: #bfccda;
+}
+.leaderboard td:nth-child(4) {
+  color: #f4d697;
+}
+.credits-panel {
+  max-width: 750px;
+}
+.credits-panel p {
+  font-size: clamp(9px, 1cqw, 13px);
+}
+.joystick {
+  border-radius: 50%;
+  border: 2px solid #c3cbb75c;
+  background: radial-gradient(#53678044, #172c48a8);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  opacity: var(--control-opacity, 0.82);
+}
+.joystick .touch-key {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #e2d8b2;
+  font-size: 15px;
+  z-index: 2;
+}
+.joystick .dpad-center {
+  border: 1px solid #d5d5bb77;
+  border-radius: 50%;
+  background: #526379bb;
+  transform: translate(var(--joy-x, 0px), var(--joy-y, 0px));
+  z-index: 1;
+  box-shadow: 0 2px 8px #0a1429;
+}
+.actions {
+  opacity: var(--control-opacity, 0.82);
+  right: calc(max(3%, env(safe-area-inset-right)) + var(--control-inset, 0px));
+  bottom: calc(12% + var(--control-lift, 0px));
+}
+.dpad {
+  left: calc(max(3%, env(safe-area-inset-left)) + var(--control-inset, 0px));
+  bottom: calc(11% + var(--control-lift, 0px));
+}
+.actions .super {
+  grid-area: 1/1;
+  background: #7b497bbf;
+  color: #ffe2a3;
+}
+.actions .super span {
+  color: #f3d4e8;
+}
+.training-bar {
+  font-size: 0.64cqw;
+  gap: 9px;
+}
+.training-bar button,
+.training-bar select {
+  font-size: 0.64cqw;
+}
+.training-bar input {
+  width: 10px;
+  height: 10px;
+  vertical-align: middle;
+}
+.training-bar label {
+  white-space: nowrap;
+}
+#interactive-tutorial {
+  position: absolute;
+  top: 24%;
+  left: 15%;
+  right: 15%;
+  padding: 9px;
+  background: #172a42e8;
+  border: 1px solid #d4bd83;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  align-items: center;
+  color: #f8e7bf;
+  font-size: clamp(8px, 1cqw, 13px);
+  pointer-events: auto;
+  text-align: center;
+}
+#interactive-tutorial button {
+  background: #eccb7a;
+  color: #162338;
+  padding: 6px;
+  font-size: 9px;
+}
+.settings-panel .settings-grid {
+  max-height: 260px;
+  overflow: auto;
+  padding: 3px 6px 3px 0;
+}
+.stage-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+.stage-preview {
+  height: 70px;
+}
+.stage-card {
+  padding-bottom: 8px;
+  gap: 4px;
+}
+.stage-card strong {
+  min-height: 17px;
+}
+.stage-card > span:last-child {
+  font-size: 7px;
+}
+.fighters-grid .fighter-card img {
+  filter: drop-shadow(3px 5px #0b152ab0);
+  image-rendering: pixelated;
+}
+.fighter-card.selected {
+  box-shadow: 0 0 16px #eccf8540;
+}
+.fighter-card img {
+  height: 13cqw;
+}
+.select-panel .fighter-detail {
+  margin-top: 12px;
+}
+.select-panel .panel-footer {
+  gap: 8px;
+}
+.select-panel .panel-footer label {
+  font-size: 7px;
+}
+#game-wrap {
+  background: #101b31;
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  .ultimate-modes .mode-card {
+    min-height: 85px;
+    padding: 9px;
+    gap: 5px;
+  }
+  .ultimate-modes .mode-card i,
+  .ultimate-modes .mode-card small {
+    display: none;
+  }
+  .ultimate-modes .mode-card strong {
+    font-size: 20px;
+  }
+  .ultimate-modes .mode-card > span {
+    font-size: 7px;
+  }
+  .stage-preview {
+    height: 52px;
+  }
+  .stage-card > span:last-child {
+    display: none;
+  }
+  .stage-card strong {
+    font-size: 9px;
+    min-height: 14px;
+  }
+  .stage-grid {
+    margin-top: 12px;
+  }
+  .settings-panel .settings-grid {
+    max-height: 230px;
+  }
+  .training-bar {
+    font-size: 6px;
+  }
+  .training-bar button,
+  .training-bar select {
+    font-size: 6px;
+  }
+  .super-meter-row {
+    bottom: 3%;
+    font-size: 0.7cqw;
+  }
+  .dpad {
+    bottom: calc(13% + var(--control-lift, 0px));
+  }
+  .actions {
+    bottom: calc(12% + var(--control-lift, 0px));
+  }
+  .result-panel .result-star {
+    font-size: 22px;
+  }
+  .result-panel h2 {
+    font-size: 25px;
+  }
+  .result-panel .primary,
+  .result-panel .secondary {
+    min-height: 29px;
+    padding: 7px 12px;
+  }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .ultimate-modes {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ultimate-modes .mode-card {
+    min-height: 100px;
+    display: flex;
+    gap: 8px;
+  }
+  .ultimate-modes .mode-card > b {
+    flex-direction: row;
+  }
+  .ultimate-modes .mode-card strong {
+    font-size: 17px;
+  }
+  .ultimate-modes .mode-card > span {
+    font-size: 7px;
+  }
+  .stage-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stage-preview {
+    height: 56px;
+  }
+  .fighter-card img {
+    height: 105px;
+  }
+  .settings-panel .settings-grid {
+    max-height: 370px;
+  }
+  .super-meter-row {
+    bottom: 6%;
+    font-size: 1.4cqw;
+  }
+  .training-bar {
+    font-size: 5px;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .training-bar button,
+  .training-bar select {
+    font-size: 6px;
+  }
+  #interactive-tutorial {
+    left: 5%;
+    right: 5%;
+    top: 21%;
+    font-size: 8px;
+  }
+  .leaderboard {
+    font-size: 7px;
+  }
+  .leaderboard td,
+  .leaderboard th {
+    padding: 6px 3px;
+  }
+}
+.meter-row {
+  bottom: 9%;
+}
+.super-meter-row {
+  bottom: 5.2%;
+}
+.training-bar {
+  font-size: 8px;
+  min-height: 22px;
+}
+.training-bar button,
+.training-bar select {
+  font-size: 8px;
+  padding: 3px 6px;
+}
+.training-bar input {
+  width: 12px;
+  height: 12px;
+}
+#hud:has(#interactive-tutorial) .training-bar {
+  display: none;
+}
+@media (pointer: coarse) {
+  .training-bar {
+    top: 18%;
+    bottom: auto;
+    left: 14%;
+    right: 14%;
+    width: auto;
+    min-height: 32px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .training-bar button,
+  .training-bar select {
+    min-height: 28px;
+    font-size: 8px;
+  }
+  .training-bar label {
+    min-height: 28px;
+  }
+  .super-meter-row {
+    bottom: 5.2%;
+  }
+  .meter-row {
+    bottom: 9%;
+  }
+}
+
+.next-stage-preview { display: block; height: 58px; overflow: hidden; border: 1px solid #d5a65c; border-radius: 5px; margin: 8px auto; width: min(260px, 90%); }
+.next-stage-preview img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+
+/* Keep the whole fight surface visible on shorter desktop windows. */
+@media (min-height: 601px) and (max-height: 800px) and (orientation: landscape) {
+  .masthead { height: 60px; }
+  main { padding-top: 16px; }
+  .arcade-shell { max-width: calc((100dvh - 170px) * 16 / 9); margin-inline: auto; }
+  .below-game { margin-top: 12px; }
+  footer { display: none; }
+}
