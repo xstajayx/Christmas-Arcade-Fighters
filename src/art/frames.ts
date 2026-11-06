@@ -95,3 +95,12 @@ export function isolateFrame(
     offset: { x: dx, y: dy },
   };
 }
+
+// Source-cell coordinates, before runtime packing offsets.
+export function touchesCellEdge(
+  frame: ReturnType<typeof isolateFrame>,
+  width: number,
+) {
+  const left = frame.bounds.x - frame.offset.x;
+  return left <= 1 || left + frame.bounds.w >= width - 1;
+}

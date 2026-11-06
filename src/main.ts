@@ -1,3 +1,4 @@
+import { activeSuper } from "./combat/presentation";
 import Phaser from "phaser";
 import "./style.css";
 import { Arena, type SceneBridge } from "./scenes/Arena";
@@ -172,6 +173,8 @@ function setScreen(s: Screen, html: string) {
     clearInterval(continueClock);
     continueClock = null;
   }
+  document.getElementById("move-callout")?.replaceChildren();
+  bridge.combatVisible = s === "match";
   screen = s;
   overlay.innerHTML = html;
   overlay.className = s;
@@ -409,9 +412,11 @@ function begin() {
         ).difficulty
       : save.settings.difficulty;
   cpu = new CPU(
-    mode === "arcade" || mode === "survival"
-      ? campaignDifficulty(difficulty, save.settings.difficulty)
-      : difficulty,
+    save.settings.difficulty === "easy"
+      ? "easy"
+      : mode === "arcade" || mode === "survival"
+        ? campaignDifficulty(difficulty, save.settings.difficulty)
+        : difficulty,
     41 + arcadeIndex * 17,
     campaign
       ? (mode === "survival"
@@ -430,6 +435,7 @@ function begin() {
           : route(chosen)[arcadeIndex]
         ).profile
       : "standard",
+    mode === "training" || mode === "versus" ? "normal" : cpu.difficulty,
   );
   if (mode === "survival") {
     match.roundsToWin = 1;
@@ -557,14 +563,17 @@ function html(el: HTMLElement, content: string) {
 function renderHud() {
   if (!match) return;
   const m = match;
+  const superFighter = activeSuper(m);
+  $("#move-callout").textContent = superFighter
+    ? signatures[superFighter.id][3]
+    : "";
   for (let i = 0; i < 2; i++) {
     const f = m.fighters[i],
       id = `p${i + 1}`;
-    $(`#health-${id}`).style.width =
-      `${(f.health / fighterById(f.id, f.profile).health) * 100}%`;
+    $(`#health-${id}`).style.width = `${(f.health / f.maxHealth) * 100}%`;
     $(`#health-${id}`).classList.toggle(
       "danger",
-      f.health < fighterById(f.id, f.profile).health * 0.25,
+      f.health < f.maxHealth * 0.25,
     );
     $(`#meter-${id}`).style.width = f.meter + "%";
     $(`#special-${id}`).classList.toggle("ready", f.meter >= 40);
@@ -678,8 +687,6 @@ function tick(delta: number) {
         signature.toLowerCase().replace(/[’']/g, "").replaceAll(" ", "-"),
         signature,
       );
-      $("#move-callout").textContent =
-        signatures[match.fighters[ev.player || 0].id][3];
     }
     if (ev.type === "counter") void sound.announce("counter", "Counter!");
     if (ev.type === "bossPhase") {

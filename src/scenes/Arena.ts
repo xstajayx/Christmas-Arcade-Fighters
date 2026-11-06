@@ -1,3 +1,4 @@
+import { activeSuper as superPresentation } from "../combat/presentation";
 import Phaser from "phaser";
 import { createArt } from "../art/pixel";
 import {
@@ -20,6 +21,7 @@ export interface SceneBridge {
   reduced: boolean;
   shake?: boolean;
   debug?: boolean;
+  combatVisible?: boolean;
   preview?: { frame: number; special: boolean };
   update: (delta: number) => void;
   ready: () => void;
@@ -520,6 +522,11 @@ export class Arena extends Phaser.Scene {
             );
         }
       }
+    if (this.bridge.combatVisible === false)
+      for (const p of this.particles) {
+        p.life = 0;
+        p.sprite.visible = false;
+      }
     this.aura.clear();
     this.scenery.clear();
     this.smoke.forEach((s, i) => {
@@ -578,10 +585,9 @@ export class Arena extends Phaser.Scene {
           .lineStyle(7, 0xfff2e0)
           .strokeCircle(x + f.facing * 6, y, 7);
       }
-    const activeSuper = m?.fighters.find(
-      (f) => f.move === "super" && f.state === "attack",
-    );
-    if (m && (m.cinematic > 0 || activeSuper)) {
+    const activeSuper =
+      this.bridge.combatVisible === false ? undefined : superPresentation(m);
+    if (m && activeSuper) {
       const f = activeSuper || m.fighters[m.cinematicPlayer],
         color = fighterById(f.id).color;
       this.aura
@@ -592,7 +598,12 @@ export class Arena extends Phaser.Scene {
         .strokeEllipse(f.x, f.y - 40, 110, 180);
       this.layers.forEach((l) => l.setTint(0x9da8bb));
     } else this.layers.forEach((l) => l.clearTint());
-    const target = m ? targetFraming(m.fighters) : { x: 400, y: 225, zoom: 1 };
+    const target = m
+      ? targetFraming(
+          m.fighters,
+          this.sprites.map((s) => s.getBounds()),
+        )
+      : { x: 400, y: 225, zoom: 1 };
     if (m?.phase === "roundOver" && m.phaseFrame < 30 && !this.bridge.reduced)
       target.zoom = Math.min(1.32, target.zoom * 1.025);
     this.framing = followFraming(

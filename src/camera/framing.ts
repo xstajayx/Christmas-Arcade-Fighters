@@ -6,11 +6,31 @@ export interface Framing {
   bounds?: { left: number; right: number; top: number; bottom: number };
 }
 export const initialFraming = (): Framing => ({ x: 400, y: 240, zoom: 1.25 });
-export function targetFraming(fighters: readonly Fighter[]): Framing {
-  const left = Math.min(...fighters.map((f) => f.x - 120)),
-    right = Math.max(...fighters.map((f) => f.x + 120));
-  const top = Math.min(...fighters.map((f) => f.y + 50 - 190)),
-    bottom = Math.max(...fighters.map((f) => f.y + 65));
+export function targetFraming(
+  fighters: readonly Fighter[],
+  visuals: readonly {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[] = [],
+): Framing {
+  const left = Math.min(
+      ...fighters.map((f) => f.x - 120),
+      ...visuals.map((b) => b.x),
+    ),
+    right = Math.max(
+      ...fighters.map((f) => f.x + 120),
+      ...visuals.map((b) => b.x + b.width),
+    );
+  const top = Math.min(
+      ...fighters.map((f) => f.y + 50 - 190),
+      ...visuals.map((b) => b.y),
+    ),
+    bottom = Math.max(
+      ...fighters.map((f) => f.y + 65),
+      ...visuals.map((b) => b.y + b.height),
+    );
   const zoom = Math.max(
     0.82,
     Math.min(1.28, 800 / (right - left + 50), 450 / (bottom - top + 44)),
