@@ -66,6 +66,7 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
     "stages/v3-arenas.webp",
     "atlases/actions.webp",
     "atlases/walk.webp",
+    "atlases/festive-gifts.webp",
     ...["jamie", "nash", "bucket", "beardy", "frost", "rob", "santa"].map(
       (id) => `atlases/special-${id}.webp`,
     ),

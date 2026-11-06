@@ -38,6 +38,7 @@ for (const file of [
   "icon-512.png",
   "stages/arenas.webp",
   "stages/v3-arenas.webp",
+  "atlases/festive-gifts.webp",
   ...[
     "jamie",
     "nash",

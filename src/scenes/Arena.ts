@@ -1,3 +1,4 @@
+import { giftFrame } from "../art/stages";
 import { activeSuper as superPresentation } from "../combat/presentation";
 import Phaser from "phaser";
 import { createArt } from "../art/pixel";
@@ -39,6 +40,24 @@ export class Arena extends Phaser.Scene {
   private layers: Phaser.GameObjects.Image[] = [];
   private flakes: Phaser.GameObjects.Rectangle[] = [];
   private particles: Particle[] = [];
+  private giftTrail!: Phaser.GameObjects.Graphics;
+  private giftImpacts: {
+    sprite: Phaser.GameObjects.Sprite;
+    age: number;
+    style: "rob" | "santa";
+  }[] = [];
+  private trackedGifts = new Map<
+    number,
+    {
+      x: number;
+      y: number;
+      vx: number;
+      life: number;
+      style: "rob" | "santa";
+      seen: number;
+    }
+  >();
+  private effectsMatch: Match | null = null;
   private missiles: Phaser.GameObjects.Sprite[] = [];
   private ambientDots: Phaser.GameObjects.Rectangle[] = [];
   private gifts: Phaser.GameObjects.Container[] = [];
@@ -62,6 +81,18 @@ export class Arena extends Phaser.Scene {
   get diagnostics() {
     return {
       camera: { ...this.framing },
+      giftVisuals: {
+        active: this.trackedGifts.size,
+        impacts: this.giftImpacts.filter((e) => e.age < 360).length,
+        frames: this.missiles
+          .filter((s) => s.visible && s.texture.key === "festive-gifts")
+          .map((s) => ({ frame: Number(s.frame.name), left: s.flipX })),
+      },
+      backgrounds: this.layers.map((l) => ({
+        x: l.x,
+        y: l.y,
+        key: l.texture.key,
+      })),
       sprites: this.sprites.map((s) => ({
         x: s.x,
         y: s.y,
@@ -82,6 +113,11 @@ export class Arena extends Phaser.Scene {
     super("Arena");
   }
   preload() {
+    this.load.spritesheet(
+      "festive-gifts",
+      `${import.meta.env.BASE_URL}atlases/festive-gifts.webp`,
+      { frameWidth: 64, frameHeight: 64 },
+    );
     for (const id of [
       "jamie",
       "nash",
@@ -293,6 +329,16 @@ export class Arena extends Phaser.Scene {
       this.missiles.push(
         this.add.sprite(0, 0, "orb-jamie").setDepth(7).setVisible(false),
       );
+    this.giftTrail = this.add.graphics().setDepth(6);
+    for (let i = 0; i < 12; i++)
+      this.giftImpacts.push({
+        sprite: this.add
+          .sprite(0, 0, "festive-gifts")
+          .setDepth(11)
+          .setVisible(false),
+        age: 360,
+        style: "rob",
+      });
     this.strikeTrail = this.add.graphics().setDepth(8);
     this.debugGraphic = this.add.graphics().setDepth(20);
     this.aura = this.add.graphics().setDepth(4);
@@ -330,11 +376,20 @@ export class Arena extends Phaser.Scene {
       this.stageId = this.bridge.stage;
       this.layers.forEach((l, i) => l.setTexture(`stage-${this.stageId}-${i}`));
     }
-    const cam = m
-      ? ((m.fighters[0].x + m.fighters[1].x) / 2 - 400) / 12
-      : Math.sin(time / 6000) * 3;
-    this.layers[0].x = 400 - cam * 0.25;
-    this.layers[1].x = 400 - cam * 0.6;
+    this.layers[0].x = 400;
+    this.layers[1].x = 400;
+    if (
+      this.effectsMatch !== m ||
+      this.bridge.combatVisible === false ||
+      (m && m.phase !== "fight")
+    ) {
+      this.trackedGifts.clear();
+      for (const effect of this.giftImpacts) {
+        effect.age = 360;
+        effect.sprite.visible = false;
+      }
+      this.effectsMatch = m;
+    }
     this.sleigh.visible = this.stageId === 4;
     if (this.sleigh.visible)
       this.sleigh.setPosition(
@@ -422,7 +477,9 @@ export class Arena extends Phaser.Scene {
     this.flakes.forEach((f, i) => {
       f.visible = !this.bridge.reduced;
       if (f.visible) {
-        f.y += ((0.18 + (i % 4) * 0.1) * delta) / 16.67;
+        f.y += ((0.12 + (i % 4) * 0.11) * delta) / 16.67;
+        f.setDepth(i % 3 === 0 ? 8 : 1);
+        f.setAlpha(i % 3 === 0 ? 0.65 : 0.3);
         f.x +=
           Math.sin(time / 2000 + i) * 0.12 + (this.stageId === 5 ? 0.45 : 0);
         if (f.y > 450 || f.x > 805) {
@@ -440,21 +497,108 @@ export class Arena extends Phaser.Scene {
         this.stageId === 5 ? 0x98eaff : [0xffc966, 0x9feacb, 0xf09076][i % 3],
       );
     });
+    this.giftTrail.clear();
     this.missiles.forEach((sprite, i) => {
-      const p = m?.projectiles[i];
+      const p =
+        this.bridge.combatVisible === false ? undefined : m?.projectiles[i];
       sprite.visible = !!p;
-      if (p)
-        sprite
-          .setTexture(
-            "orb-" +
-              (p.style === "santa" && p.data.kind === "wave"
-                ? "frost"
-                : p.style),
-          )
-          .setPosition(p.x, p.y + 50)
-          .setFlipX(p.vx < 0)
-          .setScale(p.data.kind === "wave" ? 1.35 : 1);
+      if (!p) return;
+      const gift =
+        (p.style === "rob" || p.style === "santa") && p.data.kind !== "wave";
+      sprite
+        .setTexture(
+          gift
+            ? "festive-gifts"
+            : "orb-" +
+                (p.style === "santa" && p.data.kind === "wave"
+                  ? "frost"
+                  : p.style),
+        )
+        .setFrame(
+          gift
+            ? giftFrame(
+                p.style as "rob" | "santa",
+                ((140 - p.life) * 1000) / 60,
+              )
+            : 0,
+        )
+        .setPosition(p.x, p.y + 50)
+        .setFlipX(p.vx < 0)
+        .setScale(gift ? 0.75 : p.data.kind === "wave" ? 1.35 : 1);
+      if (gift) {
+        let record = this.trackedGifts.get(p.id);
+        if (!record) {
+          record = {
+            x: p.x,
+            y: p.y,
+            vx: p.vx,
+            life: p.life,
+            style: p.style as "rob" | "santa",
+            seen: time,
+          };
+          this.trackedGifts.set(p.id, record);
+        }
+        record.x = p.x;
+        record.y = p.y;
+        record.life = p.life;
+        record.seen = time;
+        if (!this.bridge.reduced)
+          for (let k = 1; k <= 3; k++) {
+            const x = p.x - Math.sign(p.vx) * (k * 11 + 10),
+              y = p.y + 50 + Math.sin(time / 150 + k) * 3;
+            this.giftTrail
+              .fillStyle(
+                p.style === "rob" ? 0xd4a856 : k % 2 ? 0xc7f7df : 0xffe299,
+                0.5 / k,
+              )
+              .fillRect(
+                Math.round(x),
+                Math.round(y),
+                p.style === "rob" ? 7 : 3,
+                2,
+              );
+            if (p.style === "santa")
+              this.giftTrail.fillRect(
+                Math.round(x) + 1,
+                Math.round(y) - 2,
+                1,
+                6,
+              );
+          }
+      }
     });
+    for (const [id, p] of this.trackedGifts)
+      if (p.seen !== time) {
+        if (
+          m?.phase === "fight" &&
+          this.bridge.combatVisible !== false &&
+          p.life > 1 &&
+          p.x + p.vx > 0 &&
+          p.x + p.vx < 800
+        ) {
+          const effect =
+            this.giftImpacts.find((e) => e.age >= 360) || this.giftImpacts[0];
+          effect.age = 0;
+          effect.style = p.style;
+          effect.sprite
+            .setTexture("festive-gifts", giftFrame(p.style, 0, true))
+            .setPosition(p.x + p.vx, p.y + 50)
+            .setScale(0.9)
+            .setFlipX(p.vx < 0)
+            .setAlpha(1)
+            .setVisible(true);
+        }
+        this.trackedGifts.delete(id);
+      }
+    for (const effect of this.giftImpacts)
+      if (effect.age < 360) {
+        effect.age += delta;
+        effect.sprite.setFrame(giftFrame(effect.style, effect.age, true));
+        effect.sprite.setAlpha(
+          effect.age > 280 ? Math.max(0, (360 - effect.age) / 80) : 1,
+        );
+        if (effect.age >= 360) effect.sprite.visible = false;
+      }
     for (const p of this.particles) {
       if (p.life <= 0) continue;
       p.life -= delta;
@@ -502,6 +646,14 @@ export class Arena extends Phaser.Scene {
             p.life = 260;
             p.vx = Math.cos(angle) * (e.type === "super" ? 5 : 3);
             p.vy = Math.sin(angle) * 3;
+            p.sprite.setSize(
+              e.type === "landing" ? 5 : remaining % 3 === 0 ? 5 : 2,
+              e.type === "landing" ? 2 : remaining % 3 === 0 ? 2 : 3,
+            );
+            if (e.type === "landing") {
+              p.vx *= 1.6;
+              p.vy = -Math.abs(p.vy) * 0.45;
+            }
             p.sprite
               .setPosition(e.x, e.y + 50)
               .setFillStyle(color)
