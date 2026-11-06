@@ -1,0 +1,187 @@
+{
+  "status": "missing: no human-quality voice production tool or recordings available",
+  "direction": "Original deep, resonant male arcade announcer; energetic projection, crisp pronunciation, brief delivery. No voice imitation. Target -16 LUFS, peaks <= -2 dBTP.",
+  "integration": "After recording, change each matching manifest clip.compressed to studio/<id>.mp3 and quality to professional. The WAV remains a labelled robotic compatibility fallback.",
+  "files": [
+    {
+      "id": "jamie",
+      "file": "studio/jamie.mp3",
+      "text": "jamie!"
+    },
+    {
+      "id": "nash",
+      "file": "studio/nash.mp3",
+      "text": "nash!"
+    },
+    {
+      "id": "bucket",
+      "file": "studio/bucket.mp3",
+      "text": "bucket!"
+    },
+    {
+      "id": "beardy",
+      "file": "studio/beardy.mp3",
+      "text": "beardy!"
+    },
+    {
+      "id": "round-one",
+      "file": "studio/round-one.mp3",
+      "text": "round one!"
+    },
+    {
+      "id": "round-two",
+      "file": "studio/round-two.mp3",
+      "text": "round two!"
+    },
+    {
+      "id": "final-round",
+      "file": "studio/final-round.mp3",
+      "text": "final round!"
+    },
+    {
+      "id": "fight",
+      "file": "studio/fight.mp3",
+      "text": "fight!"
+    },
+    {
+      "id": "first-hit",
+      "file": "studio/first-hit.mp3",
+      "text": "first hit!"
+    },
+    {
+      "id": "counter",
+      "file": "studio/counter.mp3",
+      "text": "counter!"
+    },
+    {
+      "id": "combo",
+      "file": "studio/combo.mp3",
+      "text": "combo!"
+    },
+    {
+      "id": "super",
+      "file": "studio/super.mp3",
+      "text": "Super attack!"
+    },
+    {
+      "id": "knockout",
+      "file": "studio/knockout.mp3",
+      "text": "knockout!"
+    },
+    {
+      "id": "perfect",
+      "file": "studio/perfect.mp3",
+      "text": "perfect!"
+    },
+    {
+      "id": "you-win",
+      "file": "studio/you-win.mp3",
+      "text": "you win!"
+    },
+    {
+      "id": "you-lose",
+      "file": "studio/you-lose.mp3",
+      "text": "you lose!"
+    },
+    {
+      "id": "final-boss",
+      "file": "studio/final-boss.mp3",
+      "text": "final boss!"
+    },
+    {
+      "id": "congratulations",
+      "file": "studio/congratulations.mp3",
+      "text": "congratulations!"
+    },
+    {
+      "id": "santa-slam",
+      "file": "studio/santa-slam.mp3",
+      "text": "santa slam!"
+    },
+    {
+      "id": "reindeer-rampage",
+      "file": "studio/reindeer-rampage.mp3",
+      "text": "reindeer rampage!"
+    },
+    {
+      "id": "bucket-blizzard",
+      "file": "studio/bucket-blizzard.mp3",
+      "text": "bucket blizzard!"
+    },
+    {
+      "id": "festive-fury",
+      "file": "studio/festive-fury.mp3",
+      "text": "festive fury!"
+    },
+    {
+      "id": "choose-your-fighter",
+      "file": "studio/choose-your-fighter.mp3",
+      "text": "Choose your fighter!"
+    },
+    {
+      "id": "new-challenger",
+      "file": "studio/new-challenger.mp3",
+      "text": "New challenger!"
+    },
+    {
+      "id": "boss-battle",
+      "file": "studio/boss-battle.mp3",
+      "text": "Boss battle!"
+    },
+    {
+      "id": "final-battle",
+      "file": "studio/final-battle.mp3",
+      "text": "Final battle!"
+    },
+    {
+      "id": "rob",
+      "file": "studio/rob.mp3",
+      "text": "The Rob Father!"
+    },
+    {
+      "id": "santa",
+      "file": "studio/santa.mp3",
+      "text": "Santa!"
+    },
+    {
+      "id": "the-rob-father-special",
+      "file": "studio/the-rob-father-special.mp3",
+      "text": "The Rob Father Special!"
+    },
+    {
+      "id": "santas-final-delivery",
+      "file": "studio/santas-final-delivery.mp3",
+      "text": "Santa's Final Delivery!"
+    },
+    {
+      "id": "frost",
+      "file": "studio/frost.mp3",
+      "text": "Frost Jamie!"
+    },
+    {
+      "id": "christmas-arcade-fighters",
+      "file": "studio/christmas-arcade-fighters.mp3",
+      "text": "Christmas Arcade Fighters!"
+    },
+    {
+      "id": "five-hit-combo",
+      "file": "studio/five-hit-combo.mp3",
+      "text": "Five hit combo!"
+    },
+    {
+      "id": "special-attack",
+      "file": "studio/special-attack.mp3",
+      "text": "Special attack!"
+    },
+    {
+      "id": "super-ready",
+      "file": "studio/super-ready.mp3",
+      "text": "Super ready!"
+    },
+    {
+      "id": "christmas-arcade-champion",
+      "file": "studio/christmas-arcade-champion.mp3",
+      "text": "Christmas Arcade Champion!"
+    }
+  ]
+}

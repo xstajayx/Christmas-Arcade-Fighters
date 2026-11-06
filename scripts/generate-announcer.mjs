@@ -7,12 +7,30 @@ import process from "node:process";
 const engine = await createSpeech();
 const speaker = new engine.eSpeakNGWorker();
 speaker.set_voice("en-gb");
-speaker.rate = 148;
-speaker.pitch = 32;
-speaker.range = 18;
+speaker.rate = 164;
+speaker.pitch = 24;
+speaker.range = 25;
 const manifest = JSON.parse(
   readFileSync("public/voices/manifest.json", "utf8"),
 );
+const additions = {
+  "christmas-arcade-fighters": "Christmas Arcade Fighters!",
+  "five-hit-combo": "Five hit combo!",
+  "special-attack": "Special attack!",
+  "super-ready": "Super ready!",
+  "christmas-arcade-champion": "Christmas Arcade Champion!",
+};
+manifest.required = [
+  ...new Set([...manifest.required, ...Object.keys(additions)]),
+];
+manifest.text = {
+  ...Object.fromEntries(
+    manifest.required.map((id) => [id, id.replaceAll("-", " ") + "!"]),
+  ),
+  ...manifest.text,
+  ...additions,
+  super: "Super attack!",
+};
 mkdirSync("public/voices", { recursive: true });
 const clips = [];
 for (const id of manifest.required) {
@@ -54,7 +72,7 @@ for (const id of manifest.required) {
       "-i",
       raw,
       "-af",
-      "highpass=f=100,lowpass=f=4500,loudnorm=I=-18:TP=-1.5:LRA=8",
+      "highpass=f=75,equalizer=f=160:t=q:w=0.8:g=3,equalizer=f=2400:t=q:w=1:g=2,lowpass=f=6200,acompressor=threshold=0.18:ratio=3:attack=4:release=90,loudnorm=I=-16:TP=-2:LRA=5",
       "-ar",
       "22050",
       "-ac",
@@ -70,15 +88,39 @@ for (const id of manifest.required) {
     process.exit(1);
   }
   unlinkSync(raw);
-  clips.push({ id, file: id + ".wav", duration: count / speaker.samplerate });
+  const compressed = spawnSync(
+    "ffmpeg",
+    [
+      "-loglevel",
+      "error",
+      "-y",
+      "-i",
+      out,
+      "-c:a",
+      "libmp3lame",
+      "-b:a",
+      "64k",
+      `public/voices/${id}.mp3`,
+    ],
+    { stdio: "inherit" },
+  );
+  if (compressed.status !== 0) throw Error("Voice compression failed: " + id);
+  clips.push({
+    id,
+    file: id + ".wav",
+    compressed: id + ".mp3",
+    quality: "robotic-fallback",
+    duration: count / speaker.samplerate,
+  });
 }
 writeFileSync(
   "public/voices/manifest.json",
   JSON.stringify(
     {
       ...manifest,
+      version: 2,
       status:
-        "original synthesized robotic announcer; listening and device review required",
+        "Processed offline robotic fallback; professional recordings remain missing. Listening review required.",
       generator: "eSpeak NG Emscripten (build-time only) + FFmpeg",
       clips,
     },
@@ -88,4 +130,24 @@ writeFileSync(
 );
 process.stdout.write(
   `Generated ${clips.length} original offline announcer WAV clips.\n`,
+);
+writeFileSync(
+  "public/voices/production-needed.json",
+  JSON.stringify(
+    {
+      status:
+        "missing: no human-quality voice production tool or recordings available",
+      direction:
+        "Original deep, resonant male arcade announcer; energetic projection, crisp pronunciation, brief delivery. No voice imitation. Target -16 LUFS, peaks <= -2 dBTP.",
+      integration:
+        "After recording, change each matching manifest clip.compressed to studio/<id>.mp3 and quality to professional. The WAV remains a labelled robotic compatibility fallback.",
+      files: manifest.required.map((id) => ({
+        id,
+        file: `studio/${id}.mp3`,
+        text: manifest.text[id],
+      })),
+    },
+    null,
+    2,
+  ) + "\n",
 );

@@ -12,6 +12,7 @@ type Diagnostics = {
     frames: Record<string, number>;
     stages: boolean[];
     audio: string;
+    audioMix: { playingTrack: string | null };
   };
   match: {
     phase: string;
@@ -72,6 +73,10 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
     ),
     "stages/arenas.webp",
     "voices/fight.wav",
+    "voices/super-ready.mp3",
+    "audio/manifest.json",
+    "audio/music/rob.mp3",
+    "audio/music/santaFinal.ogg",
     "icon-192.png",
     "manifest.webmanifest",
   ])
@@ -112,6 +117,12 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
   await expect
     .poll(async () => (await page.evaluate(snapshot)).rendering.audio)
     .toBe("running");
+  await expect
+    .poll(
+      async () =>
+        (await page.evaluate(snapshot)).rendering.audioMix.playingTrack,
+    )
+    .toBe("pier");
   const initial = (await page.evaluate(snapshot)).match!.fighters[0].x;
   await page.keyboard.down("KeyD");
   await page.waitForTimeout(250);
@@ -158,6 +169,19 @@ test("offline release ignores legacy stale shell caches", async ({
   await menuReady(page);
   expect((await page.evaluate(snapshot)).build).toBe(build);
   expect(await page.locator("body").innerText()).not.toContain("STALE SOURCE");
+  const offlineVoice = await page.evaluate(async () => {
+    const version = (window as unknown as { __CAF__: { build: string } })
+      .__CAF__.build;
+    const response = await fetch(
+      new URL(`voices/fight.mp3?v=${version}`, location.href),
+    );
+    return {
+      ok: response.ok,
+      bytes: (await response.arrayBuffer()).byteLength,
+    };
+  });
+  expect(offlineVoice.ok).toBe(true);
+  expect(offlineVoice.bytes).toBeGreaterThan(1000);
   await context.setOffline(false);
 });
 

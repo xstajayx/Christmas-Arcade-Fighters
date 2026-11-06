@@ -78,7 +78,12 @@ self.addEventListener("fetch", (event) => {
       const cache = await caches.open(CACHE);
       // Keep HTML and its hashed dependencies from one complete release together.
       // Registration checks sw.js without HTTP cache and reloads after activation.
-      const key = event.request.mode === "navigate" ? ROOT : event.request;
+      // Versioned audio requests may use the already cached asset of this release.
+      // A different release marker must never resolve to this worker's old audio.
+      const releaseAsset = new URL(url);
+      if (releaseAsset.searchParams.get("v") === BUILD)
+        releaseAsset.searchParams.delete("v");
+      const key = event.request.mode === "navigate" ? ROOT : releaseAsset.href;
       const cached = await cache.match(key, { ignoreVary: true });
       if (cached) return cached;
       // Never add arbitrary HTML or a newer build's resources to this release.

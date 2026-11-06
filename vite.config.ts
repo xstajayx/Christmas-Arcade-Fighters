@@ -35,7 +35,13 @@ export default defineConfig(({ command, isPreview }) => ({
               "/",
             ),
           )
-          .filter((file) => file !== "sw.js" && file !== "index.html");
+          // Stage scores and codec variants load on demand on mobile.
+          .filter(
+            (file) =>
+              file !== "sw.js" &&
+              file !== "index.html" &&
+              !file.startsWith("audio/music/"),
+          );
         const worker = readFileSync(resolve("public/sw.js"), "utf8")
           .replace('"__CAF_BUILD_ID__"', JSON.stringify(buildId))
           .replace(

@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "provenance": "Original project compositions, deterministic offline synthesis; no external samples or recordings.",
+  "stageTracks": [
+    "village",
+    "pier",
+    "workshop",
+    "forest",
+    "rooftops",
+    "fortress",
+    "rob",
+    "santa"
+  ],
+  "tracks": [
+    {
+      "id": "menu",
+      "title": "North Star Tournament",
+      "bpm": 132,
+      "bars": 16,
+      "duration": 29.09090909090909,
+      "peak": 0.74,
+      "rms": 0.12514667447222824,
+      "files": [
+        "music/menu.mp3",
+        "music/menu.ogg"
+      ]
+    },
+    {
+      "id": "village",
+      "title": "Lanterns in the Snow",
+      "bpm": 144,
+      "bars": 16,
+      "duration": 26.666666666666668,
+      "peak": 0.74,
+      "rms": 0.12460902940839003,
+      "files": [
+        "music/village.mp3",
+        "music/village.ogg"
+      ]
+    },
+    {
+      "id": "pier",
+      "title": "Winter Carnival Rush",
+      "bpm": 164,
+      "bars": 16,
+      "duration": 23.414634146341463,
+      "peak": 0.74,
+      "rms": 0.13669378790878028,
+      "files": [
+        "music/pier.mp3",
+        "music/pier.ogg"
+      ]
+    },
+    {
+      "id": "workshop",
+      "title": "Clockwork Christmas",
+      "bpm": 152,
+      "bars": 16,
+      "duration": 25.263157894736842,
+      "peak": 0.74,
+      "rms": 0.12673874468134805,
+      "files": [
+        "music/workshop.mp3",
+        "music/workshop.ogg"
+      ]
+    },
+    {
+      "id": "forest",
+      "title": "Aurora Spell",
+      "bpm": 108,
+      "bars": 16,
+      "duration": 35.55555555555556,
+      "peak": 0.74,
+      "rms": 0.10437211265554489,
+      "files": [
+        "music/forest.mp3",
+        "music/forest.ogg"
+      ]
+    },
+    {
+      "id": "rooftops",
+      "title": "Midnight Sleigh Chase",
+      "bpm": 172,
+      "bars": 16,
+      "duration": 22.325581395348838,
+      "peak": 0.74,
+      "rms": 0.13787235415840224,
+      "files": [
+        "music/rooftops.mp3",
+        "music/rooftops.ogg"
+      ]
+    },
+    {
+      "id": "fortress",
+      "title": "Cathedral of Frost",
+      "bpm": 128,
+      "bars": 16,
+      "duration": 30,
+      "peak": 0.74,
+      "rms": 0.12348435163124315,
+      "files": [
+        "music/fortress.mp3",
+        "music/fortress.ogg"
+      ]
+    },
+    {
+      "id": "rob",
+      "title": "The King's Collection",
+      "bpm": 116,
+      "bars": 16,
+      "duration": 33.10344827586207,
+      "peak": 0.74,
+      "rms": 0.10618063431051804,
+      "files": [
+        "music/rob.mp3",
+        "music/rob.ogg"
+      ]
+    },
+    {
+      "id": "santa",
+      "title": "Crown of the North Pole",
+      "bpm": 158,
+      "bars": 16,
+      "duration": 24.303797468354432,
+      "peak": 0.74,
+      "rms": 0.11838784547546517,
+      "files": [
+        "music/santa.mp3",
+        "music/santa.ogg"
+      ]
+    },
+    {
+      "id": "santaFinal",
+      "title": "Final Delivery",
+      "bpm": 158,
+      "bars": 16,
+      "duration": 24.303797468354432,
+      "peak": 0.74,
+      "rms": 0.1317083765513494,
+      "files": [
+        "music/santaFinal.mp3",
+        "music/santaFinal.ogg"
+      ]
+    },
+    {
+      "id": "victory",
+      "title": "Festive Glory",
+      "bpm": 144,
+      "bars": 16,
+      "duration": 26.666666666666668,
+      "peak": 0.74,
+      "rms": 0.12408241267536155,
+      "files": [
+        "music/victory.mp3",
+        "music/victory.ogg"
+      ]
+    },
+    {
+      "id": "defeat",
+      "title": "One More Credit",
+      "bpm": 100,
+      "bars": 16,
+      "duration": 38.4,
+      "peak": 0.74,
+      "rms": 0.10432256562993153,
+      "files": [
+        "music/defeat.mp3",
+        "music/defeat.ogg"
+      ]
+    },
+    {
+      "id": "ending",
+      "title": "Christmas Arcade Champion",
+      "bpm": 136,
+      "bars": 16,
+      "duration": 28.235294117647058,
+      "peak": 0.74,
+      "rms": 0.1242212181955586,
+      "files": [
+        "music/ending.mp3",
+        "music/ending.ogg"
+      ]
+    }
+  ]
+}
