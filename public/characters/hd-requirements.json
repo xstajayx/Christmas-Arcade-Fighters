@@ -1,0 +1,212 @@
+{
+  "version": 1,
+  "status": "MISSING: no production HD animation sheets integrated; legacy art remains active.",
+  "direction": "Original cohesive modern 2D illustrated arcade fighters. Preserve existing faces, costumes and personalities; clean linework, consistent lighting/anatomy. No pixel-art enlargement or global blur.",
+  "referenceFighters": [
+    "jamie",
+    "beardy"
+  ],
+  "remainingFighters": [
+    "nash",
+    "bucket",
+    "frost",
+    "rob",
+    "santa"
+  ],
+  "frameSize": [
+    512,
+    640
+  ],
+  "feetAnchor": [
+    256,
+    608
+  ],
+  "sheetColumns": 4,
+  "format": "RGBA PNG or lossless WebP; transparent background; no baked floor/shadow; authored per-frame feet and grip anchors.",
+  "path": "characters/hd/<fighter>/<clip>.webp",
+  "clips": [
+    {
+      "clip": "idle",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "walkForward",
+      "frames": 12,
+      "width": 2048,
+      "height": 1920
+    },
+    {
+      "clip": "walkBackward",
+      "frames": 12,
+      "width": 2048,
+      "height": 1920
+    },
+    {
+      "clip": "crouch",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "jumpStart",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "jumpAscent",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "jumpApex",
+      "frames": 2,
+      "width": 1024,
+      "height": 640
+    },
+    {
+      "clip": "jumpDescent",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "landing",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "airPunch",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "airKick",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "standingGuard",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "crouchingGuard",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "lightPunch",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "lightKick",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "heavyPunch",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "heavyKick",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "groundHit",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "launch",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "airHit",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "knockdown",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "getUp",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "grab",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "throw",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "victory",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "defeat",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "special1",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "special2",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "super",
+      "frames": 12,
+      "width": 2048,
+      "height": 1920
+    }
+  ],
+  "currentLimitations": [
+    "Only two authored idle poses, not eight.",
+    "Four regular fighters have eight walk poses; bosses/Frost have fewer.",
+    "Free-jump phases reuse one authentic jump pose.",
+    "No dedicated airborne-punch or rising-uppercut cycle; legacy coherent jump/punch poses are retained.",
+    "Launch/air-hit reactions reuse existing recoil/fall art.",
+    "Full modern illustrated animation and HD texture loading remain blocked on the required sheets."
+  ],
+  "deliveryBudget": "Separate clip sheets (maximum 2048x1920) allow future current/next-clip loading for active fighters. Profile decoding/GPU memory on physical phones before replacing the legacy pipeline."
+}

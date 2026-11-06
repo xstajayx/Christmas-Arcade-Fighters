@@ -1,3 +1,4 @@
+import { motionPhase, renderPosition } from "../animation/motion";
 import { giftFrame, stageLayout } from "../art/stages";
 import { activeSuper as superPresentation } from "../combat/presentation";
 import Phaser from "phaser";
@@ -23,6 +24,7 @@ export interface SceneBridge {
   shake?: boolean;
   debug?: boolean;
   combatVisible?: boolean;
+  renderAlpha?: number;
   preview?: { frame: number; special: boolean };
   update: (delta: number) => void;
   ready: () => void;
@@ -99,6 +101,9 @@ export class Arena extends Phaser.Scene {
         originX: s.originX,
         originY: s.originY,
         frame: s.frame.name,
+        motion: this.bridge.match
+          ? motionPhase(this.bridge.match.fighters[this.sprites.indexOf(s)])
+          : "idle",
         texture: s.texture.key,
         bounds: {
           x: s.getBounds().x,
@@ -458,9 +463,10 @@ export class Arena extends Phaser.Scene {
       const frame = preview
         ? preview.frame
         : animationFrame(f, m ? f.animTick : Math.floor(time / 16.67));
+      const position = m ? renderPosition(f, this.bridge.renderAlpha ?? 1) : f;
       spr
         .setFrame(Math.min(frame, spr.texture.frameTotal - 2))
-        .setPosition(Math.round(f.x), Math.round(f.y + 50))
+        .setPosition(position.x, position.y + 50)
         .setFlipX(f.facing < 0)
         .setScale(0.75)
         .setDepth(5 + f.y / 1000 + f.x / 100000);
@@ -478,7 +484,10 @@ export class Arena extends Phaser.Scene {
           metadata.pivot.y / 256,
         );
       if (f.guardFrames > 0) spr.setTint(0xc4eedc);
-      else if (f.state === "hitstun" && !this.bridge.reduced)
+      else if (
+        (f.state === "hitstun" || f.state === "airHit") &&
+        !this.bridge.reduced
+      )
         spr.setTint(0xffb2a2);
       else spr.clearTint();
       const height = Math.max(0, stageLayout.floor - spr.y);

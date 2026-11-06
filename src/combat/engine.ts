@@ -25,7 +25,8 @@ export type State =
   | "victory"
   | "defeat"
   | "throwing"
-  | "thrown";
+  | "thrown"
+  | "airHit";
 export interface Input {
   left?: boolean;
   right?: boolean;
@@ -49,6 +50,12 @@ export interface Fighter {
   x: number;
   y: number;
   vy: number;
+  airSpeed: number;
+  airTicks: number;
+  jumpBuffer: number;
+  airborneKnockdown: boolean;
+  previousX: number;
+  previousY: number;
   facing: 1 | -1;
   health: number;
   meter: number;
@@ -171,6 +178,12 @@ export function makeFighter(
     x,
     y: GROUND,
     vy: 0,
+    airSpeed: 0,
+    airTicks: 0,
+    jumpBuffer: 0,
+    airborneKnockdown: false,
+    previousX: x,
+    previousY: GROUND,
     facing,
     health: Math.round(
       fighterById(id, profile).health *
@@ -274,9 +287,11 @@ export function activeHitbox(f: Fighter) {
       (f.facing === 1
         ? 13
         : -13 - d.range * fighterById(f.id, f.profile).reach),
-    y: f.y - (d.level === "low" ? 55 : d.level === "air" ? 150 : 125),
+    y:
+      f.y -
+      (d.hitboxY ?? (d.level === "low" ? 55 : d.level === "air" ? 150 : 125)),
     w: d.range * fighterById(f.id, f.profile).reach,
-    h: d.level === "low" ? 55 : 80,
+    h: d.hitboxHeight ?? (d.level === "low" ? 55 : 80),
   };
 }
 export const hurtbox = (f: Fighter) => ({
@@ -304,8 +319,17 @@ const clamp = (x: number) => Math.max(LEFT, Math.min(RIGHT, x));
 const free = (f: Fighter) =>
   ["idle", "walk", "dash", "crouch", "jump", "block"].includes(f.state);
 function startMove(m: Match, f: Fighter, move: MoveId, index: 0 | 1) {
+  if (f.y < GROUND) {
+    if (["punch", "heavyPunch", "low"].includes(move)) move = "airPunch";
+    else if (move === "kick" || move === "heavyKick") move = "air";
+  }
   const d = combatMove(f, move);
-  if (f.meter < d.cost || (move === "super" && f.superMeter < 100)) {
+  if (
+    (f.y < GROUND && d.level === "grab") ||
+    ((move === "air" || move === "airPunch") && f.y >= GROUND) ||
+    f.meter < d.cost ||
+    (move === "super" && f.superMeter < 100)
+  ) {
     f.buffer = null;
     return false;
   }
@@ -346,7 +370,11 @@ function readAttack(f: Fighter, input: Input): MoveId | null {
     if (input[key] && !f.previous[key]) {
       if (key === "special3" && f.profile !== "boss") continue;
       if (key === "punch" || key === "kick") {
-        if (f.y < GROUND) return "air";
+        if (
+          f.y < GROUND ||
+          (input.up && !f.previous.up && free(f) && f.stun === 0)
+        )
+          return key === "punch" ? "airPunch" : "air";
         if (input.down) return "low";
         if (input.heavy || (f.facing === 1 ? input.right : input.left))
           return key === "punch" ? "heavyPunch" : "heavyKick";
@@ -355,6 +383,48 @@ function readAttack(f: Fighter, input: Input): MoveId | null {
     }
   }
   return null;
+}
+function startJump(m: Match, f: Fighter, input: Input, index: 0 | 1) {
+  const direction = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  f.airSpeed =
+    direction *
+    fighterById(f.id, f.profile).speed *
+    (direction === f.facing ? balance.jumpForward : balance.jumpBackward);
+  f.y = GROUND - 1;
+  f.vy = -balance.jumpImpulse;
+  f.airTicks = 0;
+  f.airborneKnockdown = false;
+  f.jumpBuffer = 0;
+  f.moveSpeed = 0;
+  f.state = "jump";
+  f.move = null;
+  f.frame = 0;
+  m.events.push({ type: "jump", x: f.x, y: f.y, player: index });
+}
+// All melee and projectile contacts use the same juggle gate. The launch consumes
+// one contact; Easy CPUs get no repeated air string. Throws remain protected.
+function canContact(attacker: Fighter, defender: Fighter) {
+  return (
+    defender.invuln === 0 &&
+    defender.health > 0 &&
+    defender.state !== "recovery" &&
+    defender.state !== "knockdown" &&
+    !(
+      defender.y < GROUND &&
+      defender.juggles >=
+        (attacker.difficulty === "easy"
+          ? balance.easyJuggleHits
+          : balance.maxJuggles)
+    )
+  );
+}
+function airGravity(f: Fighter) {
+  return (
+    balance.gravity *
+    (f.state === "airHit" || f.airborneKnockdown
+      ? 1 + f.juggles * balance.juggleGravity
+      : 1)
+  );
 }
 function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
   f.frame++;
@@ -373,7 +443,8 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
     "throwImmunity",
   ] as const)
     if (f[key] > 0) f[key]--;
-  if (f.buffer && ++f.buffer.age > 10) f.buffer = null;
+  if (f.buffer && ++f.buffer.age > balance.attackBufferTicks) f.buffer = null;
+  if (f.jumpBuffer > 0) f.jumpBuffer--;
   const grounded = f.y >= GROUND;
   if (f.id === "frost" || f.profile === "boss") {
     const ratio = f.health / f.maxHealth,
@@ -394,7 +465,12 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
     }
   }
   if (f.stun > 0) {
-    if (!(f.state === "knockdown" && !grounded && f.stun === 1)) f.stun--;
+    if (!(
+      (f.state === "knockdown" || f.state === "airHit") &&
+      !grounded &&
+      f.stun === 1
+    ))
+      f.stun--;
     if (f.stun === 0) {
       f.state =
         f.state === "knockdown" ? "recovery" : grounded ? "idle" : "jump";
@@ -409,124 +485,176 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
     f.frame = 0;
   } else if (f.state === "attack" && f.move) {
     const d = combatMove(f, f.move);
-    if (
-      f.buffer &&
+    const jumpCancel =
+      grounded &&
+      f.jumpBuffer > 0 &&
       f.confirmed &&
-      d.cancel?.includes(f.buffer.move) &&
+      d.jumpCancel &&
       f.frame >= d.startup &&
-      f.frame <= d.startup + d.active + 9 &&
-      f.combo < 6 &&
-      (f.buffer.move !== f.move || f.combo < 2)
-    )
-      startMove(m, f, f.buffer.move, index);
-    const active = combatMove(f, f.move!);
-    if (f.frame >= active.startup + active.active + active.recovery) {
-      f.state = grounded ? "idle" : "jump";
-      f.move = null;
-      f.frame = 0;
-    } else if (
-      f.frame >= active.startup &&
-      f.frame < active.startup + active.active
-    ) {
-      if (active.hitGap && (f.frame - active.startup) % active.hitGap === 0)
-        f.hit = false;
-      if (active.dash) f.x += active.dash * f.facing;
-      if (active.kind === "counter") f.counterFrames = 2;
+      f.frame <= d.startup + d.active + 9;
+    if (jumpCancel) startJump(m, f, input, index);
+    else {
       if (
-        active.bursts &&
-        (f.frame - active.startup) % Math.max(1, active.burstGap || 10) === 0 &&
-        Math.floor((f.frame - active.startup) / (active.burstGap || 10)) <
-          active.bursts
+        f.buffer &&
+        f.confirmed &&
+        d.cancel?.includes(f.buffer.move) &&
+        f.frame >= d.startup &&
+        f.frame <= d.startup + d.active + 9 &&
+        f.combo < 6 &&
+        (f.buffer.move !== f.move || f.combo < 2)
       )
-        f.spawned = false;
-      if (!f.spawned) {
-        f.spawned = true;
-        if (active.kind === "projectile" || active.kind === "wave") {
-          m.projectiles.push({
-            id: ++m.nextProjectile,
-            owner: index,
-            x: f.x + f.facing * 42,
-            y: f.y - (active.kind === "wave" ? 44 : 105),
-            vx: f.facing * (active.projectileSpeed || 5),
-            w: active.kind === "wave" ? 38 : 28,
-            h: active.kind === "wave" ? 55 : 28,
-            life: 140,
-            move: f.move!,
-            data: { ...active },
-            style: f.id,
-          });
-          m.events.push({
-            type: "projectile",
-            x: f.x,
-            y: f.y - 100,
-            player: index,
-            move: f.move!,
-          });
-        }
-        if (active.kind === "shield") {
-          f.guardFrames = 180;
-          m.events.push({ type: "guard", x: f.x, y: f.y - 90, player: index });
-        }
-        if (active.kind === "teleport") {
-          f.x = clamp(f.x + f.facing * 115);
-          f.invuln = 12;
-        }
-        if (active.kind === "aerial" && grounded) {
-          f.vy = -7;
-          f.y--;
+        startMove(m, f, f.buffer.move, index);
+      const active = combatMove(f, f.move!);
+      if (f.frame >= active.startup + active.active + active.recovery) {
+        f.state = grounded ? "idle" : "jump";
+        f.move = null;
+        f.frame = 0;
+      } else if (
+        f.frame >= active.startup &&
+        f.frame < active.startup + active.active
+      ) {
+        if (active.hitGap && (f.frame - active.startup) % active.hitGap === 0)
+          f.hit = false;
+        if (active.dash) f.x += active.dash * f.facing;
+        if (active.kind === "counter") f.counterFrames = 2;
+        if (
+          active.bursts &&
+          (f.frame - active.startup) % Math.max(1, active.burstGap || 10) ===
+            0 &&
+          Math.floor((f.frame - active.startup) / (active.burstGap || 10)) <
+            active.bursts
+        )
+          f.spawned = false;
+        if (!f.spawned) {
+          f.spawned = true;
+          if (active.kind === "projectile" || active.kind === "wave") {
+            m.projectiles.push({
+              id: ++m.nextProjectile,
+              owner: index,
+              x: f.x + f.facing * 42,
+              y: f.y - (active.kind === "wave" ? 44 : 105),
+              vx: f.facing * (active.projectileSpeed || 5),
+              w: active.kind === "wave" ? 38 : 28,
+              h: active.kind === "wave" ? 55 : 28,
+              life: 140,
+              move: f.move!,
+              data: { ...active },
+              style: f.id,
+            });
+            m.events.push({
+              type: "projectile",
+              x: f.x,
+              y: f.y - 100,
+              player: index,
+              move: f.move!,
+            });
+          }
+          if (active.kind === "shield") {
+            f.guardFrames = 180;
+            m.events.push({
+              type: "guard",
+              x: f.x,
+              y: f.y - 90,
+              player: index,
+            });
+          }
+          if (active.kind === "teleport") {
+            f.x = clamp(f.x + f.facing * 115);
+            f.invuln = 12;
+          }
+          if (active.kind === "aerial" && grounded) {
+            f.vy = -7;
+            f.y--;
+          }
         }
       }
     }
   }
-  if (free(f)) {
+  if (free(f) && f.stun === 0) {
+    if (f.y >= GROUND && f.jumpBuffer > 0) startJump(m, f, input, index);
     if (f.buffer) startMove(m, f, f.buffer.move, index);
     if (f.state !== "attack") {
-      if (grounded && input.up && !f.previousJump) {
-        f.vy = -8.8;
-        f.state = "jump";
-        f.frame = 0;
-        m.events.push({ type: "jump", x: f.x, y: f.y, player: index });
-      } else if (grounded)
+      if (f.y >= GROUND)
         f.state = guardThreat(m, f, index)
           ? "block"
           : input.down
             ? "crouch"
-            : input.left || input.right
+            : "idle";
+      if (f.y >= GROUND) {
+        const target =
+          f.state !== "block" && !input.down
+            ? ((input.right ? 1 : 0) - (input.left ? 1 : 0)) *
+              fighterById(f.id, f.profile).speed *
+              (input.dash ? 1.8 : 1) *
+              (f.slowFrames > 0 ? 0.65 : 1)
+            : 0;
+        if (f.state === "block" || f.state === "crouch") f.moveSpeed = 0;
+        const change =
+          target === 0
+            ? balance.braking
+            : f.moveSpeed * target < 0
+              ? balance.reversing
+              : balance.acceleration;
+        f.moveSpeed += Math.max(
+          -change,
+          Math.min(change, target - f.moveSpeed),
+        );
+        f.x += f.moveSpeed;
+        if (f.state !== "block" && f.state !== "crouch")
+          f.state =
+            Math.abs(f.moveSpeed) > 0.02
               ? input.dash
                 ? "dash"
                 : "walk"
               : "idle";
-      const target =
-        f.state !== "block" && !input.down
-          ? ((input.right ? 1 : 0) - (input.left ? 1 : 0)) *
-            fighterById(f.id, f.profile).speed *
-            (input.dash ? 1.8 : 1) *
-            (f.slowFrames > 0 ? 0.65 : 1) *
-            (grounded ? 1 : 0.72)
-          : 0;
-      if (f.state === "block") f.moveSpeed = 0;
-      const change = target === 0 ? balance.braking : balance.acceleration;
-      f.moveSpeed += Math.max(-change, Math.min(change, target - f.moveSpeed));
-      f.x += f.moveSpeed;
+      }
     }
   }
-  if (!free(f)) f.moveSpeed = 0;
+  if (!free(f) || f.stun > 0) f.moveSpeed = 0;
   f.previousJump = !!input.up;
   if (f.y < GROUND || f.vy < 0) {
-    f.vy += 0.43;
+    f.airTicks++;
+    const launched = f.state === "airHit";
+    if (!launched && f.state !== "knockdown") {
+      const direction = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+      const target =
+        direction *
+        fighterById(f.id, f.profile).speed *
+        (direction === f.facing ? balance.jumpForward : balance.jumpBackward);
+      f.airSpeed += Math.max(
+        -balance.airControl,
+        Math.min(balance.airControl, target - f.airSpeed),
+      );
+    }
+    if (launched && f.airTicks >= balance.maxAirTicks) f.vy = Math.max(5, f.vy);
+    f.vy += airGravity(f);
     f.y += f.vy;
+    f.x += f.airSpeed;
     if (f.y >= GROUND) {
+      const wasAirAttack = f.move === "air" || f.move === "airPunch";
       f.y = GROUND;
       f.vy = 0;
+      f.airSpeed = 0;
+      f.airTicks = 0;
       f.juggles = 0;
       m.events.push({ type: "landing", x: f.x, y: GROUND, player: index });
-      if (f.state === "knockdown") {
+      if (launched || f.airborneKnockdown) {
+        f.state = "knockdown";
+        f.stun = 18;
+        f.frame = 21;
+        f.airborneKnockdown = false;
+        f.move = null;
+        f.buffer = null;
+      } else if (f.state === "knockdown") {
         f.vx *= 0.35;
         f.stun = Math.max(f.stun, 18);
-      }
-      if (f.state === "jump") {
+      } else if (f.state === "jump" || wasAirAttack) {
         f.state = "landing";
+        f.move = null;
         f.frame = 0;
+        f.stun = wasAirAttack
+          ? balance.airAttackLandingRecovery
+          : balance.landingRecovery;
       }
     }
   }
@@ -534,8 +662,11 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
   f.vx *=
     f.state === "knockdown" && f.throwImmunity > 0 && f.y < GROUND
       ? 0.97
-      : 0.88;
+      : f.state === "airHit"
+        ? balance.launchDrag
+        : balance.groundDrag;
 }
+
 export function directionalGuard(
   defender: Fighter,
   attacker: Fighter,
@@ -546,11 +677,11 @@ export function directionalGuard(
   return (
     !!away &&
     defender.y === GROUND &&
-    (free(defender) || defender.state === "block") &&
+    ((free(defender) && defender.stun === 0) || defender.state === "block") &&
     move.level !== "grab" &&
     (move.level === "low"
       ? !!defender.previous.down
-      : move.level === "high"
+      : move.level === "high" || move.level === "air"
         ? !defender.previous.down
         : true)
   );
@@ -572,9 +703,9 @@ function guardThreat(m: Match, f: Fighter, index: 0 | 1) {
       Math.sign(f.x - p.x) === Math.sign(p.vx),
   );
   return incoming
-    ? directionalGuard(f, foe, { ...d, level: "mid" })
+    ? directionalGuard(f, foe, d)
     : projectile
-      ? directionalGuard(f, foe, { ...projectile.data, level: "mid" })
+      ? directionalGuard(f, foe, projectile.data)
       : false;
 }
 function updateThrow(m: Match) {
@@ -654,13 +785,7 @@ function applyContact(m: Match, c: Contact) {
   const f = m.fighters[c.attacker],
     o = m.fighters[1 - c.attacker];
   const d = c.data;
-  if (
-    o.invuln > 0 ||
-    o.state === "recovery" ||
-    o.state === "knockdown" ||
-    o.health <= 0
-  )
-    return;
+  if (!canContact(f, o)) return;
   if (d.level === "grab" && !m.throwSequence && f.state !== "throwing") {
     if (o.y !== GROUND || o.stun > 0 || o.throwImmunity > 0 || !free(o)) return;
     f.hit = true;
@@ -686,7 +811,13 @@ function applyContact(m: Match, c: Contact) {
     o.counterFrames = 0;
     f.move = null;
     f.stun = 30;
-    f.state = "hitstun";
+    f.state = f.y < GROUND ? "airHit" : "hitstun";
+    if (f.state === "airHit") {
+      f.airborneKnockdown = true;
+      f.airSpeed = 0;
+      f.stun = balance.maxAirHitstun;
+      f.vx = o.facing * 2;
+    }
     f.frame = 0;
     f.health = Math.max(
       0,
@@ -728,6 +859,7 @@ function applyContact(m: Match, c: Contact) {
     d.level !== "grab";
   const shielded = o.guardFrames > 0 || armoured;
   const finalHit = !d.hitGap || f.frame - d.startup >= d.active - d.hitGap;
+  const airborne = o.y < GROUND && !c.throwRelease;
   const scale = Math.max(
     balance.comboFloor,
     1 - Math.min(f.combo, balance.maxCombo) * balance.comboStep,
@@ -740,6 +872,9 @@ function applyContact(m: Match, c: Contact) {
           d.damage *
             fighterById(f.id, f.profile).power *
             scale *
+            (airborne && c.move !== "super"
+              ? balance.juggleDamage ** o.juggles
+              : 1) *
             difficultyTuning[f.difficulty].damage *
             (counter ? 1.2 : 1) *
             (shielded ? 0.55 : 1),
@@ -767,23 +902,37 @@ function applyContact(m: Match, c: Contact) {
       o.stun = d.stun + (counter ? 7 : 0);
       o.frame = 0;
       if (f.id === "frost") o.slowFrames = 100;
-      if (d.launch && o.juggles < 3 && (c.move !== "super" || finalHit)) {
-        o.vy = -d.launch;
-        o.y -= 1;
+      const launch = d.launch && (c.move !== "super" || finalHit);
+      if (airborne || launch) {
+        const priorJuggles = o.juggles;
         o.juggles++;
+        o.airborneKnockdown = true;
+        o.airSpeed = 0;
+        o.state = "airHit";
+        o.stun = Math.min(balance.maxAirHitstun, o.stun);
+        o.vy = launch
+          ? -d.launch! / (1 + priorJuggles * 0.55)
+          : Math.min(o.vy, -balance.juggleLift / Math.max(1, priorJuggles));
+        o.y = Math.min(o.y, GROUND - 1);
+        o.vx = f.facing * (d.launchX ?? Math.min(3, d.knockback / 6));
       }
     }
   } else {
     o.state = "block";
-    o.stun = 8;
+    o.stun =
+      d.blockstun ??
+      (c.move === "super" ? 14 : c.move.startsWith("heavy") ? 15 : 10);
     o.frame = 0;
   }
-  if (!c.throwRelease)
-    o.x = clamp(
-      o.x +
-        f.facing * (guarded ? d.knockback * 0.4 : finalHit ? d.knockback : 3),
-    );
-  m.hitstop = guarded ? 3 : d.damage >= 16 ? 9 : 6;
+  if (!c.throwRelease && o.state !== "airHit")
+    o.vx =
+      f.facing *
+      (guarded ? d.knockback * 0.4 : finalHit ? d.knockback : 3) *
+      (1 - balance.groundDrag);
+  m.hitstop = guarded
+    ? 3
+    : (d.hitstop ??
+      (c.move === "super" ? 9 : c.move.startsWith("heavy") ? 8 : 4));
   const firstHit = !m.firstHit && !guarded;
   m.firstHit ||= !guarded;
   m.events.push({
@@ -798,13 +947,17 @@ function applyContact(m: Match, c: Contact) {
       ? "counter"
       : c.move.startsWith("special") || c.move === "super"
         ? "special"
-        : d.damage >= 15
+        : c.move.startsWith("heavy")
           ? "heavy"
           : "light",
   });
 }
 export function step(m: Match, inputs: [Input, Input]) {
   m.events = [];
+  for (const f of m.fighters) {
+    f.previousX = f.x;
+    f.previousY = f.y;
+  }
   m.tick++;
   m.phaseFrame++;
   if (m.phase === "matchOver") return;
@@ -817,10 +970,31 @@ export function step(m: Match, inputs: [Input, Input]) {
     return;
   }
   if (m.phase === "roundOver") {
-    m.fighters.forEach((f) => {
-      f.animTick++;
-      f.frame++;
-    });
+    // Finish existing trajectories without accepting new actions. A lethal
+    // launcher must not leave the defeated fighter suspended until the reset.
+    if (m.hitstop > 0) m.hitstop--;
+    else
+      for (const f of m.fighters) {
+        f.animTick++;
+        f.frame++;
+        if (f.y < GROUND) {
+          f.vy += airGravity(f);
+          f.y = Math.min(GROUND, f.y + f.vy);
+          f.x = clamp(f.x + f.airSpeed + f.vx);
+          f.vx *= balance.launchDrag;
+          if (f.y === GROUND) {
+            f.vy = f.vx = f.airSpeed = 0;
+            f.airTicks = f.juggles = 0;
+            f.airborneKnockdown = false;
+            m.events.push({
+              type: "landing",
+              x: f.x,
+              y: GROUND,
+              player: m.fighters.indexOf(f),
+            });
+          }
+        }
+      }
     if (m.phaseFrame >= 145) {
       if (m.fighters.some((f) => f.wins >= m.roundsToWin)) {
         m.phase = "matchOver";
@@ -835,6 +1009,8 @@ export function step(m: Match, inputs: [Input, Input]) {
     const fighter = m.fighters[i],
       input = inputs[i];
     const attack = readAttack(fighter, input);
+    if (input.up && !fighter.previous.up)
+      fighter.jumpBuffer = balance.jumpBufferTicks + 1;
     if (attack) fighter.buffer = { move: attack, age: 0 };
     fighter.previous = { ...input };
   }
@@ -855,8 +1031,18 @@ export function step(m: Match, inputs: [Input, Input]) {
   updateFighter(m, a, inputs[0], 0);
   updateFighter(m, b, inputs[1], 1);
   if (a.x !== b.x) {
-    if (a.state !== "attack" && a.stun === 0) a.facing = a.x < b.x ? 1 : -1;
-    if (b.state !== "attack" && b.stun === 0) b.facing = b.x < a.x ? 1 : -1;
+    if (
+      a.y >= GROUND &&
+      a.state !== "attack" &&
+      (a.stun === 0 || a.state === "landing")
+    )
+      a.facing = a.x < b.x ? 1 : -1;
+    if (
+      b.y >= GROUND &&
+      b.state !== "attack" &&
+      (b.stun === 0 || b.state === "landing")
+    )
+      b.facing = b.x < a.x ? 1 : -1;
   }
   separateFighters(a, b, oldDirection);
   m.fighters.forEach((f, i) => {
@@ -868,16 +1054,7 @@ export function step(m: Match, inputs: [Input, Input]) {
     const f = m.fighters[i],
       o = m.fighters[1 - i],
       box = activeHitbox(f);
-    if (
-      !box ||
-      f.hit ||
-      !f.move ||
-      o.invuln > 0 ||
-      o.state === "recovery" ||
-      o.state === "knockdown" ||
-      (o.y < GROUND && o.juggles >= 3)
-    )
-      continue;
+    if (!box || f.hit || !f.move || !canContact(f, o)) continue;
     const data = combatMove(f, f.move);
     if (
       data.level === "grab" &&
@@ -894,7 +1071,7 @@ export function step(m: Match, inputs: [Input, Input]) {
     if (p.x < 0 || p.x > 800) p.life = 0;
     if (
       p.life > 0 &&
-      o.invuln === 0 &&
+      canContact(m.fighters[p.owner], o) &&
       overlaps(
         { x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h },
         hurtbox(o),
@@ -934,7 +1111,12 @@ export function step(m: Match, inputs: [Input, Input]) {
         f.stun = 0;
         f.state = "idle";
         f.y = GROUND;
-        f.vy = 0;
+        f.vy = f.vx = f.airSpeed = f.moveSpeed = 0;
+        f.airTicks = f.juggles = f.jumpBuffer = 0;
+        f.airborneKnockdown = false;
+        f.move = null;
+        f.buffer = null;
+        f.previousY = GROUND;
         f.invuln = 20;
       }
     return;
@@ -970,6 +1152,10 @@ export const pushbox = (f: Fighter) => ({
 export function separateFighters(a: Fighter, b: Fighter, direction: number) {
   if (
     Math.abs(a.y - b.y) >= balance.pushHeight ||
+    a.state === "airHit" ||
+    b.state === "airHit" ||
+    (a.state === "knockdown" && b.y < GROUND) ||
+    (b.state === "knockdown" && a.y < GROUND) ||
     a.state === "throwing" ||
     b.state === "throwing" ||
     a.state === "thrown" ||

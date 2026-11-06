@@ -102,6 +102,7 @@ const bridge: SceneBridge = {
   match: null,
   stage: 0,
   reduced: save.settings.reduced,
+  renderAlpha: 1,
   update: tick,
   progress: (value) => {
     const bar = overlay.querySelector("progress");
@@ -158,7 +159,7 @@ export const game = new Phaser.Game({
   height: 450,
   backgroundColor: "#14213b",
   pixelArt: true,
-  roundPixels: true,
+  roundPixels: false,
   antialias: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   scene: [new Arena(bridge)],
@@ -393,7 +394,7 @@ function stageImage(i: number) {
 function tutorial(fromStart = false) {
   setScreen(
     "tutorial",
-    `<div class="panel tutorial-panel">${chip("A QUICK WARM-UP")}<h2>BRING THE HOLIDAY HEAT.</h2><div class="tutorial-grid"><div><h3>MOVE & DEFEND</h3><p><kbd>${keyName("left")}</kbd> <kbd>${keyName("right")}</kbd> Move <kbd>${keyName("up")}</kbd> Jump <kbd>${keyName("down")}</kbd> Crouch</p><p>Hold away to guard. Hold down-away against lows. Overheads beat crouching guard; grabs beat guarding.</p></div><div><h3>MAKE AN IMPACT</h3><p><kbd>${keyName("punch")}</kbd> Punch <kbd>${keyName("kick")}</kbd> Kick <kbd>${keyName("grab")}</kbd> Grab</p><p><kbd>${keyName("special")}</kbd> SP1 Dash · 40 meter. SP2 Projectile (O) · 35 meter. Crouch or jump + attack for new moves.</p></div></div><p class="help-note">Forward + Punch/Kick gives heavy attacks. SP1 Dash and SP2 Projectile stay the same in every direction. Space or ★ spends full Super meter. On touchscreens, hold a direction and tap an attack with another finger. Gamepad: stick / D-pad, A punch, B kick, X grab, Y SP1 Dash, LB SP2 Projectile, RB Super, hold away to guard. Start pauses.</p><div class="panel-footer"><span>ESC PAUSES · PLAY FAIR. FIGHT FESTIVE.</span>${button("TRY IT LIVE", "guided", "secondary")}${button(fromStart ? "GOT IT. LET’S FIGHT →" : "BACK TO THE ARCADE →", fromStart ? "begin" : "title", "primary")}</div></div>`,
+    `<div class="panel tutorial-panel">${chip("A QUICK WARM-UP")}<h2>BRING THE HOLIDAY HEAT.</h2><div class="tutorial-grid"><div><h3>MOVE & DEFEND</h3><p><kbd>${keyName("left")}</kbd> <kbd>${keyName("right")}</kbd> Move <kbd>${keyName("up")}</kbd> Jump <kbd>${keyName("down")}</kbd> Crouch</p><p>Hold away to guard. Hold down-away against lows. Overheads beat crouching guard; grabs beat guarding.</p></div><div><h3>MAKE AN IMPACT</h3><p><kbd>${keyName("punch")}</kbd> Punch <kbd>${keyName("kick")}</kbd> Kick <kbd>${keyName("grab")}</kbd> Grab</p><p><kbd>${keyName("special")}</kbd> SP1 Dash · 40 meter. SP2 Projectile (O) · 35 meter. Crouch or jump + attack for new moves.</p></div></div><p class="help-note">Forward + Punch/Kick gives heavy attacks. SP1 Dash and SP2 Projectile stay the same in every direction. Hold a direction + Jump for directional jumps. Heavy Punch launches; on hit tap Jump to follow with an air Punch/Kick. Air attacks are overheads and cannot be air-blocked. Space or ★ spends full Super meter. On touchscreens, hold a direction and tap an attack with another finger. Gamepad: stick / D-pad, A punch, B kick, X grab, Y SP1 Dash, LB SP2 Projectile, RB Super, hold away to guard. Start pauses.</p><div class="panel-footer"><span>ESC PAUSES · PLAY FAIR. FIGHT FESTIVE.</span>${button("TRY IT LIVE", "guided", "secondary")}${button(fromStart ? "GOT IT. LET’S FIGHT →" : "BACK TO THE ARCADE →", fromStart ? "begin" : "title", "primary")}</div></div>`,
   );
 }
 function keyName(action: string) {
@@ -713,6 +714,7 @@ function tick(delta: number) {
     events.push(...match.events);
     accumulator -= 1000 / 60;
   }
+  bridge.renderAlpha = Math.max(0, Math.min(1, accumulator / (1000 / 60)));
   match.events = events;
   for (const ev of events) {
     sound.play(
