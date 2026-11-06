@@ -4,6 +4,7 @@ import {
   makeFighter,
   activeHitbox,
   hurtbox,
+  pushbox,
   type Match,
 } from "../combat/engine";
 import { fighterById } from "../fighters/data";
@@ -17,6 +18,7 @@ export interface SceneBridge {
   match: Match | null;
   stage: number;
   reduced: boolean;
+  shake?: boolean;
   debug?: boolean;
   preview?: { frame: number; special: boolean };
   update: (delta: number) => void;
@@ -47,6 +49,7 @@ export class Arena extends Phaser.Scene {
     makeFighter("jamie", 155, 1),
     makeFighter("bucket", 645, -1),
   ];
+  private strikeTrail!: Phaser.GameObjects.Graphics;
   private debugGraphic!: Phaser.GameObjects.Graphics;
   private framing = initialFraming();
   private aura!: Phaser.GameObjects.Graphics;
@@ -229,6 +232,26 @@ export class Arena extends Phaser.Scene {
         );
         g.lineStyle(2, 0x5a98c4);
         g.strokeCircle(18, 14, 10);
+      } else if (id === "beardy") {
+        // Original holly-bolt pixel silhouette; no ambiguous defensive bubble.
+        for (const [x, y, w, h] of [
+          [4, 12, 12, 4],
+          [8, 8, 12, 4],
+          [12, 4, 8, 4],
+          [16, 12, 16, 4],
+          [20, 16, 12, 4],
+          [24, 20, 8, 4],
+        ]) {
+          g.fillStyle(0x2d8d58);
+          g.fillRect(x, y, w, h);
+          g.fillStyle(0xa2df77);
+          g.fillRect(x, y, 4, 4);
+        }
+        g.fillStyle(0xed4f45);
+        g.fillRect(12, 16, 8, 4);
+        g.fillRect(16, 20, 4, 4);
+        g.fillStyle(0xffe2a2);
+        g.fillRect(12, 16, 4, 2);
       } else {
         g.fillStyle(col, 0.85);
         g.fillRect(0, 6, 36, 20);
@@ -268,6 +291,7 @@ export class Arena extends Phaser.Scene {
       this.missiles.push(
         this.add.sprite(0, 0, "orb-jamie").setDepth(7).setVisible(false),
       );
+    this.strikeTrail = this.add.graphics().setDepth(8);
     this.debugGraphic = this.add.graphics().setDepth(20);
     this.aura = this.add.graphics().setDepth(4);
     this.scenery = this.add.graphics().setDepth(2);
@@ -285,13 +309,13 @@ export class Arena extends Phaser.Scene {
           .setDepth(2),
       );
     this.inspect = this.add
-      .text(8, 420, "", {
+      .text(8, 112, "", {
         fontFamily: "monospace",
         fontSize: "9px",
         backgroundColor: "#071424",
         color: "#ffdf86",
       })
-      .setScrollFactor(0)
+      .setScrollFactor(1)
       .setDepth(50);
     this.booted = true;
     this.bridge.ready();
@@ -333,6 +357,24 @@ export class Arena extends Phaser.Scene {
         ? i * 120
         : ((i * 120 + time / 65) % 840) - 20;
     });
+    this.strikeTrail.clear();
+    for (const f of m?.fighters || []) {
+      if (
+        ["kick", "heavyKick", "low", "air"].includes(f.move || "") &&
+        activeHitbox(f)
+      ) {
+        const box = activeHitbox(f)!;
+        const end = f.facing > 0 ? box.x + box.w : box.x;
+        const y = f.y + 50 - (f.move === "low" ? 22 : 55);
+        for (let k = 0; k < 4; k++)
+          this.strikeTrail
+            .fillStyle(
+              k % 2 ? 0xffe5a0 : 0xe1f7ff,
+              this.bridge.reduced ? 0.5 : 0.85,
+            )
+            .fillRect(end - f.facing * (k * 4 + 2), y - (k % 2) * 3, 3, 2);
+      }
+    }
     const display = m?.fighters || this.demos;
     display.forEach((f, i) => {
       const spr = this.sprites[i];
@@ -355,7 +397,8 @@ export class Arena extends Phaser.Scene {
         .setFrame(Math.min(frame, spr.texture.frameTotal - 2))
         .setPosition(Math.round(f.x), Math.round(f.y + 50))
         .setFlipX(f.facing < 0)
-        .setScale(0.75);
+        .setScale(0.75)
+        .setDepth(5 + f.y / 1000 + f.x / 100000);
       const metadata = (
         spr.texture.customData as {
           frames?: { pivot: { x: number; y: number } }[];
@@ -465,6 +508,7 @@ export class Arena extends Phaser.Scene {
             remaining--;
           }
           if (
+            this.bridge.shake !== false &&
             !this.bridge.reduced &&
             (e.type === "super" ||
               e.strength === "heavy" ||
@@ -560,19 +604,21 @@ export class Arena extends Phaser.Scene {
     this.cameras.main
       .setZoom(this.framing.zoom)
       .centerOn(this.framing.x, this.framing.y);
-    const hudPoint = this.cameras.main.getWorldPoint(8, 430);
+    const hudPoint = this.cameras.main.getWorldPoint(8, 112);
     this.inspect
       .setPosition(hudPoint.x, hudPoint.y)
       .setScale(1 / this.framing.zoom);
     this.inspect.setVisible(!!this.bridge.debug);
     if (this.bridge.debug && m)
       this.inspect.setText(
-        m.fighters
-          .map(
-            (f, i) =>
-              `${i + 1} ${f.id} ${f.state} frame ${animationFrame(f)} origin ${Math.round(this.sprites[i].originX * 256)},${Math.round(this.sprites[i].originY * 256)}`,
-          )
-          .join("  |  ") + `  CAM ${this.framing.zoom.toFixed(2)}`,
+        "SPRITE gold | PUSH purple | HURT green | HIT red | THROW pink | SHOT cyan\n" +
+          m.fighters
+            .map(
+              (f, i) =>
+                `${i + 1} ${f.id} ${f.state} frame ${animationFrame(f)} origin ${Math.round(this.sprites[i].originX * 256)},${Math.round(this.sprites[i].originY * 256)}`,
+            )
+            .join("  |  ") +
+          `  CAM ${this.framing.zoom.toFixed(2)}`,
       );
     this.debugGraphic.clear();
     if (this.bridge.debug) {
@@ -582,6 +628,10 @@ export class Arena extends Phaser.Scene {
         .strokeRect(c.x + 2, c.y + 2, c.width - 4, c.height - 4);
     }
     if (this.bridge.debug && m) {
+      for (const p of m.projectiles)
+        this.debugGraphic
+          .lineStyle(2, 0x52caff)
+          .strokeRect(p.x - p.w / 2, p.y + 50 - p.h / 2, p.w, p.h);
       for (const f of m.fighters) {
         const spr = this.sprites[m.fighters.indexOf(f)],
           bounds = spr.getBounds();
@@ -589,9 +639,10 @@ export class Arena extends Phaser.Scene {
           .lineStyle(1, 0xf7d366)
           .strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
         this.debugGraphic.lineStyle(2, 0xffffff).strokeCircle(f.x, f.y + 50, 3);
+        const p = pushbox(f);
         this.debugGraphic
           .lineStyle(1, 0xc891ff)
-          .strokeRect(f.x - 19.5, f.y - 117, 39, 167);
+          .strokeRect(p.x, p.y + 50, p.w, p.h);
         const h = hurtbox(f),
           a = activeHitbox(f);
         this.debugGraphic
@@ -599,7 +650,7 @@ export class Arena extends Phaser.Scene {
           .strokeRect(h.x, h.y + 50, h.w, h.h);
         if (a)
           this.debugGraphic
-            .lineStyle(2, 0xff795f)
+            .lineStyle(2, f.move === "grab" ? 0xff66cc : 0xff795f)
             .strokeRect(a.x, a.y + 50, a.w, a.h);
       }
     }

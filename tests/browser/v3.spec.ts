@@ -95,7 +95,7 @@ test("saved final level is Santa at the North Pole with the boss profile", async
   expect(s.match.fighters[1]).toMatchObject({
     id: "santa",
     profile: "boss",
-    health: 144,
+    health: 1900,
   });
 });
 
@@ -117,7 +117,7 @@ test("a real grab holds and lifts the defender before throw damage", async ({
       const m = (await page.evaluate(state)).match;
       return Math.abs(m.fighters[1].x - m.fighters[0].x);
     })
-    .toBeLessThan(50);
+    .toBeLessThan(122);
   await page.keyboard.up("KeyD");
   await page.keyboard.up("ArrowLeft");
   const health = (await page.evaluate(state)).match.fighters[1].health;

@@ -1,3 +1,4 @@
+import { defaultPadButtons } from "../ui/bindings";
 import type { Difficulty } from "../ai/cpu";
 import { route, type Campaign } from "../progression/campaign";
 import type { FighterId } from "../fighters/data";
@@ -16,7 +17,11 @@ export interface Settings {
   reduced: boolean;
   compact: boolean;
   leftHanded: boolean;
+  rounds: number;
+  timer: number;
+  shake: boolean;
   keys: Record<string, string>;
+  padButtons: Record<string, number>;
 }
 export interface Score {
   fighter: FighterId;
@@ -47,7 +52,6 @@ export const defaultKeys = {
   special: "KeyI",
   grab: "KeyU",
   special2: "KeyO",
-  special3: "KeyP",
   super: "Space",
 };
 export const defaults = (): Save => ({
@@ -67,7 +71,11 @@ export const defaults = (): Save => ({
     reduced: false,
     compact: false,
     leftHanded: false,
+    rounds: 2,
+    timer: 99,
+    shake: true,
     keys: { ...defaultKeys },
+    padButtons: { ...defaultPadButtons },
   },
   highScore: 0,
   arcadeWins: 0,
@@ -99,7 +107,14 @@ export function loadSave(): Save {
           d.settings[key] = Math.max(min, Math.min(max, v[key]));
       if (["easy", "normal", "hard", "master"].includes(v.difficulty))
         d.settings.difficulty = v.difficulty;
+      for (const [key, values] of [
+        ["rounds", [1, 2, 3]],
+        ["timer", [60, 75, 99]],
+      ] as const)
+        if ((values as readonly number[]).includes(v[key]))
+          d.settings[key] = v[key];
       for (const key of [
+        "shake",
         "muted",
         "reduced",
         "vibration",
@@ -108,6 +123,18 @@ export function loadSave(): Save {
         "leftHanded",
       ] as const)
         if (typeof v[key] === "boolean") d.settings[key] = v[key];
+      if (v.padButtons && typeof v.padButtons === "object") {
+        const buttons = Object.fromEntries(
+          Object.keys(defaultPadButtons).map((key) => [key, v.padButtons[key]]),
+        );
+        if (
+          Object.values(buttons).every(
+            (value) => Number.isInteger(value) && value >= 0 && value <= 5,
+          ) &&
+          new Set(Object.values(buttons)).size === 6
+        )
+          d.settings.padButtons = buttons;
+      }
       if (v.keys && typeof v.keys === "object") {
         const merged = {
           ...defaultKeys,

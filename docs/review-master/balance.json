@@ -1,0 +1,117 @@
+{
+  "scope": "Seeded normal-v-normal CPU rounds including hitstop, excluding intro/result delay. Rule preset: one round to win. No health/timer/winner mutation. Not human balance acceptance.",
+  "results": [
+    {
+      "a": "jamie",
+      "b": "nash",
+      "seconds": 51,
+      "winner": 0,
+      "timeout": false
+    },
+    {
+      "a": "nash",
+      "b": "bucket",
+      "seconds": 50,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "bucket",
+      "b": "beardy",
+      "seconds": 37,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "beardy",
+      "b": "jamie",
+      "seconds": 42,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "jamie",
+      "b": "bucket",
+      "seconds": 48,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "nash",
+      "b": "beardy",
+      "seconds": 40,
+      "winner": 0,
+      "timeout": false
+    },
+    {
+      "a": "bucket",
+      "b": "jamie",
+      "seconds": 47,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "beardy",
+      "b": "nash",
+      "seconds": 44,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "jamie",
+      "b": "beardy",
+      "seconds": 39,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "nash",
+      "b": "jamie",
+      "seconds": 31,
+      "winner": 0,
+      "timeout": false
+    },
+    {
+      "a": "bucket",
+      "b": "nash",
+      "seconds": 47,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "beardy",
+      "b": "bucket",
+      "seconds": 48,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "jamie",
+      "b": "jamie",
+      "seconds": 38,
+      "winner": 0,
+      "timeout": false
+    },
+    {
+      "a": "nash",
+      "b": "nash",
+      "seconds": 42,
+      "winner": 1,
+      "timeout": false
+    },
+    {
+      "a": "bucket",
+      "b": "bucket",
+      "seconds": 46,
+      "winner": 0,
+      "timeout": false
+    },
+    {
+      "a": "beardy",
+      "b": "beardy",
+      "seconds": 40,
+      "winner": 1,
+      "timeout": false
+    }
+  ]
+}

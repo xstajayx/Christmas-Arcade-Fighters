@@ -1,3 +1,4 @@
+import { fighterById } from "../../src/fighters/data";
 import { chooseMode } from "./helpers";
 import { test, expect, type Page } from "@playwright/test";
 import type { Match } from "../../src/combat/engine";
@@ -101,21 +102,21 @@ async function drivenBout(page: Page, seed: number) {
     };
   }, seed);
 }
-test("three specials, hitbox lab and cinematic Super work through controls", async ({
+test("fixed dash/projectile, hitbox lab and integrated Super work through controls", async ({
   page,
 }) => {
   await choose(page, "TRAINING", "JAMIE");
   await expect.poll(async () => (await state(page)).match?.phase).toBe("fight");
   await page.locator("#show-hitboxes").check();
   await page.getByRole("button", { name: "FULL METERS" }).click();
-  await page.keyboard.press("KeyI");
+  await page.keyboard.press("KeyO");
   await expect
     .poll(async () => (await state(page)).match?.fighters[1].health)
-    .toBeLessThan(96);
+    .toBeLessThan(1104);
   await page.keyboard.down("KeyD");
   await expect
     .poll(async () => (await state(page)).match!.fighters[0].x)
-    .toBeGreaterThan(480);
+    .toBeGreaterThan(420);
   await page.keyboard.up("KeyD");
   await page.keyboard.press("KeyJ", { delay: 90 });
   await page.keyboard.press("KeyK", { delay: 90 });
@@ -130,10 +131,12 @@ test("three specials, hitbox lab and cinematic Super work through controls", asy
     .toBe("special2");
   await page.waitForTimeout(900);
   await page.getByRole("button", { name: "FULL METERS" }).click();
-  await page.keyboard.press("KeyP");
+  await page.keyboard.down("KeyS");
+  await page.keyboard.press("KeyI");
+  await page.keyboard.up("KeyS");
   await expect
     .poll(async () => (await state(page)).match!.fighters[0].move)
-    .toBe("special3");
+    .toBe("special");
   await page.waitForTimeout(1000);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.keyboard.press("Space");
@@ -294,7 +297,7 @@ test("ten real input-driven bouts reach the boss, continue, ending and leaderboa
   expect((await state(page)).match!.fighters[0]).toMatchObject({
     id: "rob",
     profile: "standard",
-    health: 110,
+    health: 1265,
   });
   await page
     .getByRole("button", { name: "SPRITE INSPECTOR", exact: true })
@@ -321,7 +324,10 @@ test("survival advances with measured partial health recovery", async ({
   await page.getByRole("button", { name: "NEXT CHALLENGER" }).click();
   expect((await state(page)).campaign?.index).toBe(1);
   expect((await state(page)).match!.fighters[0].health).toBe(
-    Math.min(118, result.health! + 24),
+    Math.min(
+      fighterById("nash").health,
+      result.health! + Math.round(fighterById("nash").health * 0.2),
+    ),
   );
 });
 
@@ -333,10 +339,10 @@ test("a short press/release between frames is latched until the simulation consu
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.evaluate(() => {
     document.body.dispatchEvent(
-      new KeyboardEvent("keydown", { code: "KeyI", bubbles: true }),
+      new KeyboardEvent("keydown", { code: "KeyO", bubbles: true }),
     );
     document.body.dispatchEvent(
-      new KeyboardEvent("keyup", { code: "KeyI", bubbles: true }),
+      new KeyboardEvent("keyup", { code: "KeyO", bubbles: true }),
     );
   });
   await expect
@@ -373,7 +379,7 @@ test("interactive tutorial advances on real actions and saves completion", async
   await page.keyboard.down("KeyD");
   await expect
     .poll(async () => (await state(page)).match!.fighters[0].x)
-    .toBeGreaterThan(480);
+    .toBeGreaterThan(420);
   await page.keyboard.up("KeyD");
   await page.keyboard.press("KeyJ");
   await expect.poll(async () => (await state(page)).tutorialStep).toBe(3);

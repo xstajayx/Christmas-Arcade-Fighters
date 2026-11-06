@@ -1,3 +1,4 @@
+import { defaultPadButtons } from "./bindings";
 import type { Input } from "../combat/engine";
 export const p2Keys: Record<string, string> = {
   left: "ArrowLeft",
@@ -9,10 +10,10 @@ export const p2Keys: Record<string, string> = {
   special: "Numpad5",
   grab: "Numpad0",
   special2: "Numpad6",
-  special3: "Numpad7",
   super: "Numpad4",
 };
 export class Controls {
+  padMapping: Record<string, number> = { ...defaultPadButtons };
   keys = new Set<string>();
   touch = new Map<number, string>();
   mapping: Record<string, string>;
@@ -93,11 +94,8 @@ export class Controls {
       out.right ||= pad.axes[0] > 0.35 || b(15);
       out.up ||= pad.axes[1] < -0.5 || b(12);
       out.down ||= pad.axes[1] > 0.5 || b(13);
-      out.punch ||= b(0);
-      out.kick ||= b(1);
-      out.special ||= b(3);
-      out.grab ||= b(2);
-      out.super ||= b(5);
+      for (const [action, button] of Object.entries(this.padMapping))
+        if (b(button)) (out as Record<string, boolean>)[action] = true;
       out.heavy ||= b(7);
       out.dash ||= b(6);
     }
@@ -124,7 +122,7 @@ export class Controls {
     this.padNav = nav;
   }
   mountTouch(container: HTMLElement) {
-    container.innerHTML = `<div class="dpad joystick" aria-label="Virtual joystick"><button class="touch-key up" data-action="up" aria-label="Jump">▲</button><button class="touch-key left" data-action="left" aria-label="Move left">◀</button><span class="dpad-center joystick-knob"></span><button class="touch-key right" data-action="right" aria-label="Move right">▶</button><button class="touch-key down" data-action="down" aria-label="Crouch">▼</button></div><div class="actions"><button class="touch-key super" data-action="super">★<span>SUPER</span></button><button class="touch-key grab" data-action="grab">G<span>GRAB</span></button><button class="touch-key punch" data-action="punch">P<span>PUNCH</span></button><button class="touch-key kick" data-action="kick">K<span>KICK</span></button><button class="touch-key special" data-action="special">✦<span>SPECIAL</span></button></div>`;
+    container.innerHTML = `<div class="dpad joystick" aria-label="Virtual joystick"><button class="touch-key up" data-action="up" aria-label="Jump">▲</button><button class="touch-key left" data-action="left" aria-label="Move left">◀</button><span class="dpad-center joystick-knob"></span><button class="touch-key right" data-action="right" aria-label="Move right">▶</button><button class="touch-key down" data-action="down" aria-label="Crouch">▼</button></div><div class="actions"><button class="touch-key super" data-action="super">★<span>SUPER</span></button><button class="touch-key grab" data-action="grab">G<span>GRAB</span></button><button class="touch-key punch" data-action="punch">P<span>PUNCH</span></button><button class="touch-key kick" data-action="kick">K<span>KICK</span></button><button class="touch-key special" data-action="special" aria-label="SP1 Dash">SP1<span>DASH</span></button><button class="touch-key special2" data-action="special2" aria-label="SP2 Projectile">SP2<span>SHOT</span></button></div>`;
     const joy = container.querySelector<HTMLElement>(".joystick")!;
     const move = (e: PointerEvent) => {
       const r = joy.getBoundingClientRect(),

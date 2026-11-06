@@ -62,7 +62,7 @@ describe("fixed-step combat", () => {
     expect(m.fighters[0].meter).toBe(40);
     expect(m.fighters[0].move).toBe("special");
     expect(getMove("nash", "special").dash).toBeGreaterThan(0);
-    expect(getMove("bucket", "special").kind).toBe("projectile");
+    expect(getMove("bucket", "special2").kind).toBe("projectile");
   });
   it("jumps, lands and cannot walk through boundaries", () => {
     const m = ready();
@@ -75,7 +75,7 @@ describe("fixed-step combat", () => {
   it("resolves simultaneous punches as a trade", () => {
     const m = ready();
     run(m, 8, { punch: true }, { punch: true });
-    expect(m.fighters[0].health).toBeLessThan(104);
+    expect(m.fighters[0].health).toBeLessThan(fighterById("jamie").health);
     expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health);
   });
   it("handles double KO and starts a fresh draw round", () => {
@@ -169,7 +169,7 @@ describe("combat protections", () => {
     run(m, 8, { punch: true }, { kick: true });
     expect(m.fighters[1].state).toBe("hitstun");
     expect(m.fighters[1].move).toBeNull();
-    expect(m.fighters[0].health).toBe(104);
+    expect(m.fighters[0].health).toBe(fighterById("jamie").health);
   });
   it("requires a new input edge for a repeated attack", () => {
     const m = ready();
@@ -220,6 +220,6 @@ describe("combat protections", () => {
 it("cannot guard during an attack even when away and attack are held", () => {
   const m = ready();
   run(m, 8, { punch: true, left: true }, { punch: true, right: true });
-  expect(m.fighters[0].health).toBeLessThan(103);
+  expect(m.fighters[0].health).toBeLessThan(fighterById("jamie").health - 1);
   expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health - 1);
 });

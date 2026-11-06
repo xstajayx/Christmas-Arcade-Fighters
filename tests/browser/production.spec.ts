@@ -1,3 +1,4 @@
+import { fighterById } from "../../src/fighters/data";
 import { menuReady, chooseMode } from "./helpers";
 import { test, expect } from "@playwright/test";
 const root =
@@ -121,12 +122,12 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
   await page.keyboard.down("KeyD");
   await expect
     .poll(async () => (await page.evaluate(snapshot)).match!.fighters[0].x)
-    .toBeGreaterThan(480);
+    .toBeGreaterThan(420);
   await page.keyboard.up("KeyD");
   await page.keyboard.press("KeyK", { delay: 70 });
   await expect
     .poll(async () => (await page.evaluate(snapshot)).match!.fighters[1].health)
-    .toBeLessThan(96);
+    .toBeLessThan(fighterById("bucket").health);
   expect(errors).toEqual([]);
 });
 
