@@ -1,0 +1,539 @@
+/* Arcade presentation only: game rules, input actions and saved preferences are unchanged. */
+#overlay.menu {
+  background: #080e1b55;
+  overflow: hidden;
+}
+.v3-menu {
+  position: relative;
+  isolation: isolate;
+  width: 94%;
+  max-width: 1320px;
+  height: 94%;
+  max-height: 760px;
+  padding: 2% 3%;
+  background: #10192bea;
+  border: 3px solid #d9a64d;
+  box-shadow:
+    inset 0 0 0 5px #101827,
+    inset 0 0 0 7px #775332,
+    8px 8px 0 #050d1ca6;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.v3-menu::before,
+.v3-menu::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 2%;
+  right: 2%;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    #286248 0 22px,
+    #d8ac52 22px 27px,
+    #832f39 27px 42px,
+    #f5d878 42px 46px
+  );
+}
+.v3-menu::before {
+  top: 10px;
+}
+.v3-menu::after {
+  bottom: 10px;
+}
+.tournament-banner {
+  color: #e5be70;
+  letter-spacing: 0.35em;
+  font: bold clamp(8px, 1cqw, 14px)/1.3 monospace;
+  margin-bottom: 1%;
+}
+.v3-logo {
+  position: relative;
+  z-index: 2;
+  font:
+    italic 900 clamp(30px, 5.4cqw, 76px)/0.9 Impact,
+    "Arial Black",
+    monospace;
+  color: #ffe08c;
+  letter-spacing: 0.02em;
+  text-shadow:
+    3px 0 #692639,
+    -3px 0 #692639,
+    0 -2px #fff1b4,
+    4px 5px #9d3039,
+    7px 8px #050e20;
+  margin: 1% 0 2%;
+}
+.v3-logo span {
+  font-size: 0.57em;
+  letter-spacing: 0.11em;
+  margin-top: 10px;
+  color: #fff4d9;
+}
+.entrance-fighter {
+  position: absolute;
+  bottom: 0;
+  width: 43%;
+  max-height: 91%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  z-index: 0;
+  pointer-events: none;
+  filter: drop-shadow(7px 5px 0 #030817);
+  animation: stance-breathe 4s ease-in-out infinite;
+}
+.entrance-left {
+  left: -9%;
+}
+.entrance-right {
+  right: -9%;
+  transform: scaleX(-1);
+  animation-name: stance-breathe-right;
+}
+.v3-primary {
+  position: relative;
+  z-index: 2;
+  width: 43%;
+  min-width: 260px;
+  max-width: 460px;
+  gap: 7px;
+  margin: 0 auto;
+}
+.arcade-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #111e33f2;
+  border: 2px solid #7d8797;
+  box-shadow:
+    inset 3px 0 #a82f3d,
+    4px 4px 0 #050d1d;
+  color: #f6ead0;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: 900 clamp(16px, 2.4cqw, 34px)/1 monospace;
+  letter-spacing: 0.09em;
+  clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%);
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.arcade-choice i {
+  font-style: normal;
+  font-size: 0.45em;
+  color: #bd9760;
+}
+.arcade-choice b {
+  font-size: 0.55em;
+  opacity: 0;
+}
+.arcade-choice:hover,
+.arcade-choice:focus-visible {
+  transform: none;
+  color: #172137;
+  background: #ffe095;
+  border-color: #fff6d3;
+  box-shadow:
+    inset 6px 0 #a6313e,
+    4px 4px #551c2b;
+  animation: arcade-highlight 1.4s steps(2, end) infinite;
+}
+.arcade-choice:focus-visible b,
+.arcade-choice:hover b {
+  opacity: 1;
+}
+.arcade-choice:focus-visible i,
+.arcade-choice:hover i {
+  color: #69432a;
+}
+.v3-utility {
+  position: relative;
+  z-index: 2;
+  gap: 10px;
+  margin-top: 2%;
+}
+.v3-utility button {
+  font: 700 clamp(9px, 0.9cqw, 13px)/1 monospace;
+  min-height: 32px;
+  border: 1px solid #87714d;
+  background: #101b2eeb;
+  color: #ead6ab;
+}
+.v3-utility small {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #d5c7b2;
+}
+@keyframes arcade-highlight {
+  to {
+    border-color: #b55842;
+  }
+}
+@keyframes stance-breathe {
+  50% {
+    translate: 0 -4px;
+  }
+}
+@keyframes stance-breathe-right {
+  50% {
+    translate: 0 -4px;
+  }
+}
+#overlay:not(.menu) .panel {
+  background: #101b2ff5;
+  border: 2px solid #bf9555;
+  box-shadow:
+    inset 0 0 0 4px #111b2b,
+    5px 5px 0 #030a17;
+}
+.panel h2 {
+  font-family: Impact, "Arial Black", monospace;
+  letter-spacing: 0.045em;
+  color: #ffe1a2;
+  text-shadow: 2px 2px #7b303e;
+}
+.panel .primary {
+  background: #f2cd78;
+  color: #172337;
+  border: 2px solid #fff0bb;
+  box-shadow: 3px 3px #754332;
+  font-weight: 900;
+}
+.panel .secondary,
+.panel .text-btn {
+  color: #f4d89c;
+  border-color: #817051;
+}
+.select-panel {
+  width: 96%;
+  max-width: 1420px;
+  max-height: 96%;
+  padding: 2%;
+}
+.select-panel h2 {
+  margin: 0 0 1.5%;
+  font-size: clamp(22px, 3cqw, 44px);
+}
+.fighters-grid {
+  gap: 9px;
+}
+.fighter-card {
+  position: relative;
+  border: 2px solid #596779;
+  background: #19263b;
+  box-shadow: 3px 3px #060e1d;
+  padding: 6px;
+  overflow: hidden;
+  min-width: 0;
+}
+.fighters-grid .fighter-card img {
+  height: clamp(94px, 15cqw, 230px);
+  width: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(4px 2px 0 #050b16);
+  transition: translate 150ms;
+}
+.fighter-card strong {
+  font:
+    900 clamp(12px, 1.6cqw, 22px)/1.05 Impact,
+    monospace;
+  color: #f8e8c2;
+  letter-spacing: 0.04em;
+  min-height: 26px;
+}
+.fighter-card small {
+  font-size: clamp(8px, 0.8cqw, 11px);
+  line-height: 1.2;
+  color: #c2d0dc;
+}
+.fighter-card.selected {
+  border-color: #ffe1a2;
+  box-shadow:
+    inset 0 -5px #e9b947,
+    3px 3px #8a3038;
+  background: #344057;
+}
+.fighter-card.selected img {
+  translate: 0 -3px;
+}
+.fighter-card .select-marker {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #ffe09b;
+  padding: 5px;
+  background: #0d1826;
+}
+.fighter-card.locked {
+  opacity: 1;
+  border-style: dashed;
+}
+.fighter-card.locked img {
+  filter: brightness(0);
+  opacity: 0.8;
+}
+.fighter-card.locked small {
+  color: #e9c886;
+}
+.fighter-number {
+  color: #d6a24c;
+}
+.select-panel .fighter-detail {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #091426;
+  border-left: 4px solid #ad3843;
+}
+.fighter-detail h3 {
+  color: #ffe2a5;
+}
+.select-panel .panel-footer label {
+  font-size: clamp(9px, 1cqw, 13px);
+}
+.panel-footer {
+  gap: 8px;
+}
+.options-tabs [aria-pressed="false"] {
+  background: #142337;
+  color: #c7d0dc;
+}
+.options-tabs [aria-pressed="true"],
+.control-tabs [aria-pressed="true"] {
+  background: #f2cf86;
+  color: #142337;
+  border-color: #fff0c2;
+}
+.result-panel h2 {
+  font-size: clamp(26px, 4.5cqw, 64px);
+  line-height: 1;
+}
+.result-panel .result-score {
+  padding: 10px;
+  border-block: 1px solid #9f7949;
+  color: #ffe1a3;
+}
+.result-panel .result-star {
+  color: #f4d782;
+}
+.unlock-notice {
+  border: 2px solid #ffe08e;
+  background: #2f563f;
+  color: #fff1bd;
+  padding: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+.next-challenge {
+  background: #142337;
+  border-left: 5px solid #d7ac58;
+}
+.next-challenge h3 {
+  font:
+    900 clamp(18px, 2.4cqw, 30px)/1.1 Impact,
+    monospace;
+  color: #ffe09b;
+}
+#continue-clock {
+  font-size: 1.4em;
+  color: #9e293b;
+  background: #ffe0a2;
+  padding: 3px;
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  main {
+    padding-top: 0;
+  }
+  #game-wrap {
+    width: min(
+      calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right)),
+      calc(
+        (100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 16 /
+          9
+      )
+    );
+    height: auto;
+    margin-top: env(safe-area-inset-top);
+  }
+  .v3-menu {
+    height: 96%;
+    width: 96%;
+    padding: 1% 3%;
+  }
+  .tournament-banner {
+    font-size: 8px;
+    margin: 0 0 3px;
+  }
+  .v3-logo {
+    font-size: 4.6cqw;
+    margin: 3px 0 8px;
+  }
+  .v3-logo span {
+    margin-top: 5px;
+  }
+  .v3-primary {
+    gap: 4px;
+    width: 42%;
+    min-width: 240px;
+  }
+  .arcade-choice {
+    min-height: 38px;
+    padding: 5px 10px;
+    font-size: 2.4cqw;
+    border-width: 1px;
+  }
+  .v3-utility {
+    margin-top: 7px;
+    gap: 6px;
+  }
+  .v3-utility button {
+    min-height: 29px;
+    padding: 4px 8px;
+  }
+  .v3-utility small {
+    display: none;
+  }
+  .entrance-fighter {
+    width: 43%;
+    max-height: 88%;
+  }
+  .entrance-left {
+    left: -8%;
+  }
+  .entrance-right {
+    right: -8%;
+  }
+  .select-panel {
+    padding: 9px 12px;
+    max-height: 98%;
+  }
+  .select-panel h2 {
+    font-size: 20px;
+    margin: 0 0 5px;
+  }
+  .select-panel > .eyebrow {
+    display: none;
+  }
+  .fighters-grid {
+    gap: 5px;
+  }
+  .fighter-card {
+    padding: 3px;
+  }
+  .fighters-grid .fighter-card img {
+    height: 96px;
+  }
+  .fighter-card strong {
+    font-size: 11px;
+    min-height: 22px;
+  }
+  .fighter-card small {
+    font-size: 8px;
+    min-height: 20px;
+  }
+  .fighter-card .select-marker {
+    font-size: 8px;
+    padding: 3px;
+  }
+  .fighter-number {
+    font-size: 8px;
+  }
+  .select-panel .fighter-detail {
+    margin-top: 5px;
+    padding: 5px 8px;
+  }
+  .select-panel .fighter-detail p {
+    display: none;
+  }
+  .fighter-detail h3 {
+    font-size: 12px;
+    margin: 0;
+  }
+  .fighter-stats {
+    font-size: 9px;
+  }
+  .select-panel .panel-footer {
+    margin-top: 5px;
+    padding-top: 5px;
+  }
+  .select-panel .panel-footer button {
+    min-height: 32px;
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+  .select-panel .panel-footer select {
+    min-height: 30px;
+  }
+  .select-panel .versus-note {
+    font-size: 8px;
+    margin: 3px 0;
+  }
+  .panel.compact {
+    max-height: 96%;
+    padding: 12px 18px;
+  }
+  .panel.compact h2 {
+    font-size: 25px;
+  }
+  .result-panel .result-star {
+    display: none;
+  }
+  .result-panel p {
+    margin: 5px 0;
+  }
+  .result-panel .stack {
+    gap: 5px;
+  }
+  .result-panel .stack button {
+    min-height: 32px;
+  }
+  .result-panel .result-score {
+    padding: 5px;
+  }
+  .results .result-panel {
+    max-width: 660px;
+    width: 94%;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 6px 18px;
+    text-align: center;
+  }
+  .results .result-panel > * {
+    grid-column: 1;
+    margin-block: 0;
+  }
+  .results .result-panel .unlock-notice {
+    grid-column: 1 / -1;
+    padding: 6px 10px;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .results .result-panel .stack {
+    grid-column: 2;
+    grid-row: 3 / span 6;
+    align-self: center;
+    gap: 8px;
+  }
+  .results .result-panel .stack button {
+    min-height: 40px;
+    padding: 8px;
+  }
+  .next-stage-preview {
+    height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entrance-fighter,
+  .arcade-choice {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+body.reduced .entrance-fighter,
+body.reduced .arcade-choice {
+  animation: none;
+  transition: none;
+}

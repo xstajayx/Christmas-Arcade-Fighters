@@ -1,6 +1,7 @@
 import { activeSuper } from "./combat/presentation";
 import Phaser from "phaser";
 import "./style.css";
+import "./arcade.css";
 import { Arena, type SceneBridge } from "./scenes/Arena";
 import {
   fighters,
@@ -202,17 +203,20 @@ function showMenu() {
   sound.setTrack("menu");
   setScreen(
     "menu",
-    `<div class="v3-menu"><h1 class="v3-logo">CHRISTMAS <span>ARCADE FIGHTERS</span></h1><nav class="v3-primary" aria-label="Arcade menu">${[
+    `<div class="v3-menu"><img class="entrance-fighter entrance-left" src="${portrait("jamie")}" alt="" aria-hidden="true"><img class="entrance-fighter entrance-right" src="${portrait("bucket")}" alt="" aria-hidden="true"><div class="tournament-banner" aria-hidden="true">THE FESTIVE FIGHT NIGHT</div><h1 class="v3-logo">CHRISTMAS <span>ARCADE FIGHTERS</span></h1><nav class="v3-primary" aria-label="Arcade menu">${[
       ["ARCADE", "arcade"],
       ["VERSUS", "versusmenu"],
       ["TRAINING", "training"],
       ["CHARACTERS", "characters"],
       ["OPTIONS", "settings"],
     ]
-      .map(([label, action]) => button(label, action, "arcade-choice"))
+      .map(
+        ([label, action], i) =>
+          `<button class="arcade-choice" data-action="${action}" aria-label="${label}"><i aria-hidden="true">0${i + 1}</i><span>${label}</span><b aria-hidden="true">▶</b></button>`,
+      )
       .join(
         "",
-      )}</nav><div class="v3-utility">${button("FULLSCREEN", "fullscreen", "secondary")}${button("MORE MODES", "more", "secondary")}${button("HOW TO PLAY", "how", "text-btn")}<small>V3 · ARCADE EVOLUTION</small></div><p id="fullscreen-status" role="status"></p></div>`,
+      )}</nav><div class="v3-utility">${button("FULLSCREEN", "fullscreen", "secondary")}${button("MORE MODES", "more", "secondary")}${button("HOW TO PLAY", "how", "text-btn")}<small>CHRISTMAS TOURNAMENT · V3.3</small></div><p id="fullscreen-status" role="status"></p></div>`,
   );
 }
 function moreModes(versusOnly = false) {
@@ -242,28 +246,28 @@ async function fullscreen() {
   }
 }
 const portraitCache = new Map<string, string>();
-function portrait(id: FighterId, frame = 0) {
-  const key = id + ":" + frame;
+function portrait(id: FighterId, frame = 0, close = false) {
+  const key = id + ":" + frame + ":" + close;
   if (portraitCache.has(key)) return portraitCache.get(key)!;
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;
+  const context = canvas.getContext("2d")!;
+  context.imageSmoothingEnabled = false;
   const texture = game?.textures.get(id).getSourceImage() as
     HTMLCanvasElement | undefined;
   if (texture)
-    canvas
-      .getContext("2d")!
-      .drawImage(
-        texture,
-        (frame % 8) * 256,
-        Math.floor(frame / 8) * 256,
-        256,
-        256,
-        0,
-        0,
-        256,
-        256,
-      );
+    context.drawImage(
+      texture,
+      (frame % 8) * 256 + (close ? 32 : 0),
+      Math.floor(frame / 8) * 256 + (close ? 16 : 0),
+      close ? 192 : 256,
+      close ? 192 : 256,
+      0,
+      0,
+      256,
+      256,
+    );
   const url = canvas.toDataURL();
   portraitCache.set(key, url);
   return url;
@@ -275,7 +279,11 @@ setInterval(() => {
   overlay
     .querySelectorAll<HTMLImageElement>("img[data-fighter]")
     .forEach((img) => {
-      img.src = portrait(img.dataset.fighter as FighterId, portraitTick % 2);
+      img.src = portrait(
+        img.dataset.fighter as FighterId,
+        portraitTick % 2,
+        img.dataset.portrait === "close",
+      );
     });
 }, 450);
 function select() {
@@ -283,7 +291,7 @@ function select() {
     void sound.announce("choose-your-fighter", "Choose your fighter!");
   setScreen(
     "select",
-    `<div class="panel select-panel">${chip(mode === "versus" ? "LOCAL RIVALRY" : "MEET THE NAUGHTY LIST")}<h2>CHOOSE YOUR FIGHTER.</h2><div class="fighters-grid">${roster.map((f) => `<button class="fighter-card ${f.id === chosen ? "selected" : ""} ${save.unlocked.includes(f.id) ? "" : "locked"}" ${save.unlocked.includes(f.id) ? "" : "disabled"} style="--fighter:${"#" + f.color.toString(16)}" data-action="pick-${f.id}" aria-pressed="${f.id === chosen}"><span class="fighter-number">0${roster.indexOf(f) + 1}</span><img data-fighter="${f.id}" src="${portrait(f.id)}" alt="Pixel portrait of ${f.name}"><strong>${f.name}</strong><small>${save.unlocked.includes(f.id) ? f.title : "DEFEAT BOSS IN ARCADE TO UNLOCK"}</small><span class="select-marker">${!save.unlocked.includes(f.id) ? "LOCKED" : f.id === chosen ? "PLAYER 1" : "SELECT"}</span></button>`).join("")}</div><div class="fighter-detail"><div><h3>${chosen.toUpperCase()} <span>${fighterById(chosen).special}</span></h3><p>${fighterById(chosen).bio}</p></div><div class="fighter-stats">${["POWER", "SPEED", "DEFENCE"].map((label, i) => `<span>${label} <b>${"▰".repeat(fighterById(chosen).stats[i])}<i>${"▱".repeat(5 - fighterById(chosen).stats[i])}</i></b></span>`).join("")}</div></div><div class="panel-footer">${button("← MODES", "menu", "text-btn")}${
+    `<div class="panel select-panel">${chip(mode === "versus" ? "LOCAL RIVALRY" : "MEET THE NAUGHTY LIST")}<h2>CHOOSE YOUR FIGHTER.</h2><div class="fighters-grid">${roster.map((f) => `<button class="fighter-card ${f.id === chosen ? "selected" : ""} ${save.unlocked.includes(f.id) ? "" : "locked"}" ${save.unlocked.includes(f.id) ? "" : "disabled"} style="--fighter:${"#" + f.color.toString(16)}" data-action="pick-${f.id}" aria-pressed="${f.id === chosen}"><span class="fighter-number">0${roster.indexOf(f) + 1}</span><img data-fighter="${f.id}" data-portrait="close" src="${portrait(f.id, 0, true)}" alt="Pixel portrait of ${f.name}"><strong class="fighter-name">${f.name}</strong><small>${save.unlocked.includes(f.id) ? f.title : `DEFEAT ${f.id === "rob" ? "ROB FATHER · LV 8" : "SANTA · LV 10"}`}</small><span class="select-marker">${!save.unlocked.includes(f.id) ? "LOCKED" : f.id === chosen ? "PLAYER 1" : "SELECT"}</span></button>`).join("")}</div><div class="fighter-detail"><div><h3>${chosen.toUpperCase()} <span>${fighterById(chosen).special}</span></h3><p>${fighterById(chosen).bio}</p></div><div class="fighter-stats">${["POWER", "SPEED", "DEFENCE"].map((label, i) => `<span>${label} <b>${"▰".repeat(fighterById(chosen).stats[i])}<i>${"▱".repeat(5 - fighterById(chosen).stats[i])}</i></b></span>`).join("")}</div></div><div class="panel-footer">${button("← MODES", "menu", "text-btn")}${
       mode === "arcade" || mode === "survival"
         ? `<label>CPU DIFFICULTY <select id="select-difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label>`
         : `<label>${mode === "versus" ? "PLAYER 2" : "OPPONENT"} <select id="opponent">${roster

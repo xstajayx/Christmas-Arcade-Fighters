@@ -82,3 +82,5 @@ const v3 = spawnSync(
   { stdio: "inherit" },
 );
 if (v3.status !== 0) process.exit(1);
+
+await import("./prepare-gifts.mjs");

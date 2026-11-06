@@ -1,3 +1,4 @@
+import { stageSource } from "./stages";
 import Phaser from "phaser";
 import { fighters } from "../fighters/data";
 import { isolateFrame, touchesCellEdge } from "./frames";
@@ -43,47 +44,19 @@ export function createArt(
       canvas.height = 450;
       const c = canvas.getContext("2d")!;
       c.imageSmoothingEnabled = false;
-      if (layer < 2) {
-        c.save();
-        c.beginPath();
-        c.rect(0, layer === 0 ? 0 : 180, 800, layer === 0 ? 180 : 170);
-        c.clip();
-        c.drawImage(
+      if (layer === 0) {
+        const rect = stageSource(stage);
+        const source =
           stage < 6
             ? environment
             : (scene.textures
                 .get("v3-environment")
-                .getSourceImage() as HTMLImageElement),
-          stage < 6 ? (stage % 2) * 768 : 0,
-          stage < 6 ? (Math.floor(stage / 2) * 1024) / 3 : (stage - 6) * 512,
-          stage < 6 ? 768 : 1536,
-          stage < 6 ? 1024 / 3 : 512,
-          0,
-          0,
-          800,
-          355,
-        );
-        c.restore();
-      } else
-        c.drawImage(
-          stage < 6
-            ? environment
-            : (scene.textures
-                .get("v3-environment")
-                .getSourceImage() as HTMLImageElement),
-          stage < 6 ? (stage % 2) * 768 : 0,
-          stage < 6
-            ? (Math.floor(stage / 2) * 1024) / 3 + 260
-            : (stage - 6) * 512 + 384,
-          stage < 6 ? 768 : 1536,
-          stage < 6 ? 80 : 128,
-          0,
-          350,
-          800,
-          100,
-        );
+                .getSourceImage() as HTMLImageElement);
+        c.drawImage(source, rect.x, rect.y, rect.w, rect.h, 0, 0, 800, 450);
+      }
+      // Overlay slots remain transparent: atmosphere is independently animated in Arena.
       scene.textures.addCanvas(`stage-${stage}-${layer}`, canvas);
-      progress(40 + ((stage * 3 + layer + 1) / 18) * 60);
+      progress(40 + ((stage * 3 + layer + 1) / 24) * 60);
     }
   scene.textures.remove("environment-atlas");
   scene.textures.remove("v3-environment");

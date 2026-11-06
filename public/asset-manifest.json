@@ -300,5 +300,22 @@
     "hud": "fixed DOM, independent of world zoom",
     "debug": "training sprite inspector and camera viewport overlay",
     "koMaxZoom": 1.32
+  },
+  "bossProjectiles": {
+    "runtime": "atlases/festive-gifts.webp",
+    "source": "assets/source/festive-gifts.png",
+    "cell": [
+      64,
+      64
+    ],
+    "columns": 8,
+    "rows": [
+      "Rob flight",
+      "Rob destruction",
+      "Santa flight",
+      "Santa destruction"
+    ],
+    "sampling": "nearest",
+    "visualOnly": true
   }
 }
