@@ -1,6 +1,6 @@
 import { balance } from "../combat/balance";
 import type { Fighter } from "../combat/engine";
-import { getMove } from "../fighters/data";
+import { combatMove } from "../combat/engine";
 export const FRAME_WIDTH = 192,
   FRAME_HEIGHT = 256;
 export const clips = {
@@ -99,7 +99,7 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
     speed = 9;
   }
   if (f.state === "attack" && f.move) {
-    const move = getMove(f.id, f.move, f.profile, f.bossPhase),
+    const move = combatMove(f, f.move),
       kick = ["kick", "heavyKick", "low", "air"].includes(f.move);
     sequence =
       f.move === "grab" || move.kind === "throw"
@@ -135,7 +135,7 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
     if (f.move === "heavyKick") return clips.heavyKick[phase];
     if (f.move.startsWith("special") || f.move === "super") {
       const row =
-        getMove(f.id, f.move, f.profile, f.bossPhase).poseRow ??
+        combatMove(f, f.move).poseRow ??
         (f.move === "special"
           ? 0
           : f.move === "special2"

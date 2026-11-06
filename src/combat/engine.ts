@@ -1,3 +1,6 @@
+import { difficultyTuning } from "./difficulty";
+import type { Difficulty } from "../ai/cpu";
+import { activeSuper } from "./presentation";
 import { balance, bodyWidths } from "./balance";
 import {
   fighterById,
@@ -41,6 +44,8 @@ export interface Input {
 export interface Fighter {
   id: FighterId;
   profile: BalanceProfile;
+  difficulty: Difficulty;
+  maxHealth: number;
   x: number;
   y: number;
   vy: number;
@@ -140,6 +145,7 @@ export interface Match {
     frame: number;
     direction: 1 | -1;
     startX: number;
+    attackerX: number;
     move: MoveId;
     data: Move;
   } | null;
@@ -152,15 +158,24 @@ export function makeFighter(
   x: number,
   facing: 1 | -1,
   profile: BalanceProfile = "standard",
+  difficulty: Difficulty = "normal",
 ): Fighter {
   return {
     id,
     profile,
+    difficulty,
+    maxHealth: Math.round(
+      fighterById(id, profile).health *
+        (profile === "boss" ? difficultyTuning[difficulty].bossHealth : 1),
+    ),
     x,
     y: GROUND,
     vy: 0,
     facing,
-    health: fighterById(id, profile).health,
+    health: Math.round(
+      fighterById(id, profile).health *
+        (profile === "boss" ? difficultyTuning[difficulty].bossHealth : 1),
+    ),
     meter: 20,
     superMeter: 0,
     state: "idle",
@@ -196,11 +211,12 @@ export function createMatch(
   b: FighterId,
   training = false,
   opponentProfile: BalanceProfile = "standard",
+  difficulty: Difficulty = "normal",
 ): Match {
   return {
     fighters: [
       makeFighter(a, 245, 1),
-      makeFighter(b, 555, -1, opponentProfile),
+      makeFighter(b, 555, -1, opponentProfile, difficulty),
     ],
     tick: 0,
     timer: 5940,
@@ -225,8 +241,8 @@ export function createMatch(
 export function resetRound(m: Match) {
   const old = m.fighters;
   m.fighters = [
-    makeFighter(old[0].id, 245, 1, old[0].profile),
-    makeFighter(old[1].id, 555, -1, old[1].profile),
+    makeFighter(old[0].id, 245, 1, old[0].profile, old[0].difficulty),
+    makeFighter(old[1].id, 555, -1, old[1].profile, old[1].difficulty),
   ];
   m.fighters.forEach((f, i) => {
     f.wins = old[i].wins;
@@ -234,6 +250,8 @@ export function resetRound(m: Match) {
     f.meter = old[i].meter;
     f.superMeter = old[i].superMeter;
   });
+  m.cinematic = 0;
+  m.hitstop = 0;
   m.round++;
   m.timer = m.roundTicks;
   m.phase = "intro";
@@ -245,7 +263,7 @@ export function resetRound(m: Match) {
 }
 export function activeHitbox(f: Fighter) {
   if (f.state !== "attack" || !f.move) return null;
-  const d = getMove(f.id, f.move, f.profile, f.bossPhase);
+  const d = combatMove(f, f.move);
   if (["projectile", "wave", "shield", "counter"].includes(d.kind || ""))
     return null;
   if (f.frame < d.startup || f.frame >= d.startup + d.active) return null;
@@ -286,7 +304,7 @@ const clamp = (x: number) => Math.max(LEFT, Math.min(RIGHT, x));
 const free = (f: Fighter) =>
   ["idle", "walk", "dash", "crouch", "jump", "block"].includes(f.state);
 function startMove(m: Match, f: Fighter, move: MoveId, index: 0 | 1) {
-  const d = getMove(f.id, move, f.profile, f.bossPhase);
+  const d = combatMove(f, move);
   if (f.meter < d.cost || (move === "super" && f.superMeter < 100)) {
     f.buffer = null;
     return false;
@@ -358,7 +376,7 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
   if (f.buffer && ++f.buffer.age > 10) f.buffer = null;
   const grounded = f.y >= GROUND;
   if (f.id === "frost" || f.profile === "boss") {
-    const ratio = f.health / fighterById(f.id, f.profile).health,
+    const ratio = f.health / f.maxHealth,
       phase =
         f.id === "rob"
           ? ratio < 0.5
@@ -376,7 +394,7 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
     }
   }
   if (f.stun > 0) {
-    f.stun--;
+    if (!(f.state === "knockdown" && !grounded && f.stun === 1)) f.stun--;
     if (f.stun === 0) {
       f.state =
         f.state === "knockdown" ? "recovery" : grounded ? "idle" : "jump";
@@ -390,7 +408,7 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
     f.state = "idle";
     f.frame = 0;
   } else if (f.state === "attack" && f.move) {
-    const d = getMove(f.id, f.move, f.profile, f.bossPhase);
+    const d = combatMove(f, f.move);
     if (
       f.buffer &&
       f.confirmed &&
@@ -401,7 +419,7 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
       (f.buffer.move !== f.move || f.combo < 2)
     )
       startMove(m, f, f.buffer.move, index);
-    const active = getMove(f.id, f.move!, f.profile, f.bossPhase);
+    const active = combatMove(f, f.move!);
     if (f.frame >= active.startup + active.active + active.recovery) {
       f.state = grounded ? "idle" : "jump";
       f.move = null;
@@ -502,6 +520,10 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
       f.vy = 0;
       f.juggles = 0;
       m.events.push({ type: "landing", x: f.x, y: GROUND, player: index });
+      if (f.state === "knockdown") {
+        f.vx *= 0.35;
+        f.stun = Math.max(f.stun, 18);
+      }
       if (f.state === "jump") {
         f.state = "landing";
         f.frame = 0;
@@ -509,7 +531,10 @@ function updateFighter(m: Match, f: Fighter, input: Input, index: 0 | 1) {
     }
   }
   f.x = clamp(f.x + f.vx);
-  f.vx *= 0.88;
+  f.vx *=
+    f.state === "knockdown" && f.throwImmunity > 0 && f.y < GROUND
+      ? 0.97
+      : 0.88;
 }
 export function directionalGuard(
   defender: Fighter,
@@ -532,9 +557,7 @@ export function directionalGuard(
 }
 function guardThreat(m: Match, f: Fighter, index: 0 | 1) {
   const foe = m.fighters[1 - index];
-  const d = foe.move
-    ? getMove(foe.id, foe.move, foe.profile, foe.bossPhase)
-    : null;
+  const d = foe.move ? combatMove(foe, foe.move) : null;
   const incoming =
     d &&
     foe.state === "attack" &&
@@ -564,26 +587,42 @@ function updateThrow(m: Match) {
     a.stun = b.stun = 10;
     a.invuln = b.invuln = 12;
     a.buffer = b.buffer = null;
-    b.x = clamp(a.x + t.direction * 55);
+    a.vx = -t.direction * 2;
+    b.vx = t.direction * 2;
     m.throwSequence = null;
     m.events.push({ type: "throwBreak", x: (a.x + b.x) / 2, y: GROUND - 80 });
     return false;
   }
   t.frame++;
   a.frame = b.frame = t.frame;
-  const lift = Math.max(0, Math.min(1, (t.frame - 7) / 10));
+  const smooth = (n: number) => {
+    const x = Math.max(0, Math.min(1, n));
+    return x * x * (3 - 2 * x);
+  };
+  const pull = smooth(t.frame / 12),
+    lift = smooth((t.frame - 8) / 12);
+  a.x = clamp(t.attackerX + t.direction * 18 * pull);
+  a.facing = t.direction;
+  b.facing = t.direction === 1 ? -1 : 1;
   const holdX = a.x + t.direction * (37 - lift * 15);
-  b.x = clamp(t.startX + (holdX - t.startX) * Math.min(1, t.frame / 7));
+  b.x = clamp(t.startX + (holdX - t.startX) * pull);
   b.y = GROUND - lift * 60;
   b.vy = 0;
   if (t.frame < 24) return true;
   b.state = "idle";
   b.invuln = 0;
-  applyContact(m, { attacker: t.attacker, data: t.data, move: t.move });
+  applyContact(m, {
+    attacker: t.attacker,
+    data: t.data,
+    move: t.move,
+    throwRelease: true,
+  });
   b.state = "knockdown";
   b.stun = Math.max(35, b.stun);
-  b.vy = -4.8;
-  b.vx = t.direction * 5;
+  b.frame = 14;
+  b.vy = -6.2;
+  b.vx = t.direction * 7;
+  a.vx = -t.direction * 1.2;
   b.throwImmunity = 75;
   a.state = "recovery";
   a.invuln = 8;
@@ -608,6 +647,7 @@ interface Contact {
   move: MoveId;
   projectile?: Projectile;
   counter?: boolean;
+  throwRelease?: boolean;
 }
 function applyContact(m: Match, c: Contact) {
   const f = m.fighters[c.attacker],
@@ -634,6 +674,7 @@ function applyContact(m: Match, c: Contact) {
       frame: 0,
       direction: f.facing,
       startX: o.x,
+      attackerX: f.x,
       move: c.move,
       data: { ...d },
     };
@@ -646,8 +687,10 @@ function applyContact(m: Match, c: Contact) {
     f.stun = 30;
     f.state = "hitstun";
     f.frame = 0;
-    f.health = Math.max(0, f.health - 24);
-    o.superMeter = Math.min(100, o.superMeter + 15);
+    f.health = Math.max(
+      0,
+      f.health - Math.round(24 * difficultyTuning[o.difficulty].damage),
+    );
     o.score += 240;
     o.combo++;
     o.comboDamage += 24;
@@ -674,10 +717,8 @@ function applyContact(m: Match, c: Contact) {
     (!guarded &&
       o.state === "attack" &&
       o.move !== null &&
-      o.frame < getMove(o.id, o.move, o.profile, o.bossPhase).startup);
-  const incomingArmour = o.move
-    ? getMove(o.id, o.move, o.profile, o.bossPhase).armour
-    : undefined;
+      o.frame < combatMove(o, o.move).startup);
+  const incomingArmour = o.move ? combatMove(o, o.move).armour : undefined;
   const armoured =
     o.state === "attack" &&
     incomingArmour &&
@@ -698,6 +739,7 @@ function applyContact(m: Match, c: Contact) {
           d.damage *
             fighterById(f.id, f.profile).power *
             scale *
+            difficultyTuning[f.difficulty].damage *
             (counter ? 1.2 : 1) *
             (shielded ? 0.55 : 1),
         ),
@@ -708,8 +750,8 @@ function applyContact(m: Match, c: Contact) {
     f.meter + (guarded ? balance.meterOnGuard : balance.meterOnHit),
   );
   o.meter = Math.min(100, o.meter + balance.meterOnReceive);
-  f.superMeter = Math.min(100, f.superMeter + (guarded ? 3 : 10));
-  o.superMeter = Math.min(100, o.superMeter + 6);
+  if (!guarded && c.move !== "super" && d.kind !== "super")
+    f.superMeter = Math.min(100, f.superMeter + 10);
   f.score += damage * 10;
   if (!guarded) {
     f.confirmed = true;
@@ -735,9 +777,11 @@ function applyContact(m: Match, c: Contact) {
     o.stun = 8;
     o.frame = 0;
   }
-  o.x = clamp(
-    o.x + f.facing * (guarded ? d.knockback * 0.4 : finalHit ? d.knockback : 3),
-  );
+  if (!c.throwRelease)
+    o.x = clamp(
+      o.x +
+        f.facing * (guarded ? d.knockback * 0.4 : finalHit ? d.knockback : 3),
+    );
   m.hitstop = guarded ? 3 : d.damage >= 16 ? 9 : 6;
   const firstHit = !m.firstHit && !guarded;
   m.firstHit ||= !guarded;
@@ -793,6 +837,7 @@ export function step(m: Match, inputs: [Input, Input]) {
     if (attack) fighter.buffer = { move: attack, age: 0 };
     fighter.previous = { ...input };
   }
+  if (!activeSuper(m)) m.cinematic = 0;
   if (m.cinematic > 0) {
     m.cinematic--;
     return;
@@ -832,7 +877,7 @@ export function step(m: Match, inputs: [Input, Input]) {
       (o.y < GROUND && o.juggles >= 3)
     )
       continue;
-    const data = getMove(f.id, f.move, f.profile, f.bossPhase);
+    const data = combatMove(f, f.move);
     if (
       data.level === "grab" &&
       (o.y < GROUND || o.stun > 0 || o.throwImmunity > 0)
@@ -884,7 +929,7 @@ export function step(m: Match, inputs: [Input, Input]) {
   if (m.training) {
     for (const f of m.fighters)
       if (f.health === 0) {
-        f.health = fighterById(f.id, f.profile).health;
+        f.health = f.maxHealth;
         f.stun = 0;
         f.state = "idle";
         f.y = GROUND;
@@ -897,8 +942,8 @@ export function step(m: Match, inputs: [Input, Input]) {
     m.phase = "roundOver";
     m.phaseFrame = 0;
     m.projectiles = [];
-    const h0 = a.health / fighterById(a.id, a.profile).health,
-      h1 = b.health / fighterById(b.id, b.profile).health,
+    const h0 = a.health / a.maxHealth,
+      h1 = b.health / b.maxHealth,
       win = h0 === h1 ? "draw" : h0 > h1 ? 0 : 1;
     m.roundWinner = win;
     if (win !== "draw") {
@@ -946,4 +991,15 @@ export function separateFighters(a: Fighter, b: Fighter, direction: number) {
     b.x = left;
     a.x = left + distance;
   }
+}
+
+export function combatMove(f: Fighter, move: MoveId): Move {
+  const data = getMove(f.id, move, f.profile, f.bossPhase);
+  const tuning = difficultyTuning[f.difficulty];
+  if (f.profile === "boss" && tuning.warning) {
+    data.startup += tuning.warning;
+    data.recovery += tuning.heavyRest;
+    if (data.bursts) data.bursts = 1;
+  }
+  return data;
 }

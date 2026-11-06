@@ -635,6 +635,11 @@ export function getMove(
   if (profile === "standard" && move === "special")
     m.range = (96 - 13) / fighterById(id).reach;
   if (m.kind === "throw") m.range = (97 - 13) / fighterById(id, profile).reach;
+  if (move === "super")
+    m.damage = Math.round(
+      (balance.superReferenceHealth * balance.superFraction) /
+        ((m.hits || 1) * fighterById(id, profile).power),
+    );
   return m;
 }
 

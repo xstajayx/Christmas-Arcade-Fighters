@@ -1,3 +1,5 @@
+import { difficultyTuning } from "../combat/difficulty";
+import type { MoveId } from "../fighters/data";
 import type { Input, Match } from "../combat/engine";
 import { getMove } from "../fighters/data";
 export type Difficulty = "easy" | "normal" | "hard" | "master";
@@ -22,6 +24,11 @@ export class CPU {
   private seenAt = 0;
   private seenFrame = 0;
   private ownAttack = false;
+  private lastAttack: MoveId | null = null;
+  private lastConfirmed = false;
+  private projectileAt = 0;
+  private dashAt = 0;
+  private superAt = 0;
   private restUntil = 0;
   constructor(
     public difficulty: Difficulty = "normal",
@@ -60,25 +67,48 @@ export class CPU {
       this.seenFrame = 0;
       this.seenAt = m.tick;
     }
+    const cfg = difficultyTuning[this.difficulty];
+    const easy = this.difficulty === "easy";
     const owner = m.fighters[index];
     const attacking = owner.state === "attack" || owner.state === "throwing";
     if (
       owner.profile === "boss" &&
       this.ownAttack &&
       !attacking &&
-      owner.stun === 0
+      (owner.stun === 0 || easy)
     )
       this.restUntil =
-        m.tick + (owner.id === "santa" ? 24 - owner.bossPhase * 5 : 24);
+        m.tick +
+        (easy
+          ? cfg.bossRest +
+            (!this.lastConfirmed ? cfg.whiffRest : 0) +
+            (["heavyPunch", "heavyKick", "super"].includes(
+              this.lastAttack || "",
+            )
+              ? cfg.heavyRest
+              : 0)
+          : owner.id === "santa"
+            ? 24 - owner.bossPhase * 5
+            : 24);
+    if (attacking && owner.move) {
+      if (!this.ownAttack) {
+        const move = getMove(
+          owner.id,
+          owner.move,
+          owner.profile,
+          owner.bossPhase,
+        );
+        if (owner.move === "super") this.superAt = m.tick + cfg.superCooldown;
+        else if (["projectile", "wave"].includes(move.kind || ""))
+          this.projectileAt = m.tick + cfg.projectileCooldown;
+        else if (move.dash) this.dashAt = m.tick + cfg.dashCooldown;
+      }
+      this.lastAttack = owner.move;
+      this.lastConfirmed = owner.confirmed;
+    }
     this.ownAttack = attacking;
     if (owner.profile === "boss" && m.tick < this.restUntil) return {};
     if (m.tick < this.next) return this.decision;
-    const cfg = {
-      easy: { delay: 28, guard: 0.22, aggression: 0.53 },
-      normal: { delay: 17, guard: 0.47, aggression: 0.74 },
-      hard: { delay: 11, guard: 0.68, aggression: 0.88 },
-      master: { delay: 8, guard: 0.79, aggression: 0.94 },
-    }[this.difficulty];
     const me = m.fighters[index],
       foe = m.fighters[1 - index],
       dist = Math.abs(me.x - foe.x),
@@ -87,12 +117,13 @@ export class CPU {
       phase = me.profile === "boss" || me.id === "frost" ? me.bossPhase : 0;
     this.next =
       m.tick +
-      Math.max(7, cfg.delay - phase * 2) +
+      Math.max(7, cfg.delay - (easy ? 0 : phase * 2)) +
       Math.floor(this.random() * 7);
     this.turn++;
     const r = this.random();
     let out: Input = {};
-    const canReact = m.tick - this.seenAt >= Math.max(7, cfg.delay - phase * 2);
+    const canReact =
+      m.tick - this.seenAt >= Math.max(7, cfg.delay - (easy ? 0 : phase * 2));
     const punish =
       canReact &&
       foe.state === "attack" &&
@@ -110,7 +141,11 @@ export class CPU {
     else if (me.confirmed && me.state === "attack" && me.move === "punch")
       out = me.meter >= 40 && r < 0.45 ? { special: true } : { kick: true };
     else if (this.turn % 2 === 0 && me.state !== "walk") out = {};
-    else if (me.superMeter >= 100 && dist < 155 && (punish || r < 0.35))
+    else if (
+      me.superMeter >= 100 &&
+      dist < 155 &&
+      (punish || r < cfg.superChance)
+    )
       out = { super: true };
     else if (missile && 140 - missile.life >= cfg.delay && r < cfg.guard)
       out =
@@ -216,6 +251,31 @@ export class CPU {
         delete out.special2;
         if (dist > 130) out.special2 = true;
         else out.special = true;
+      }
+    }
+    if (easy && !dummy) {
+      if (me.confirmed && me.state === "attack" && r >= cfg.combo) out = {};
+      const action = (
+        [
+          "super",
+          "special3",
+          "special2",
+          "special",
+          "heavyPunch",
+          "heavyKick",
+        ] as MoveId[]
+      ).find((key) => (out as Record<string, boolean>)[key]);
+      if (action) {
+        const move = getMove(me.id, action, me.profile, me.bossPhase);
+        if (
+          (action === "super" &&
+            (m.tick < this.superAt || r >= cfg.superChance)) ||
+          (action !== "super" &&
+            ["projectile", "wave"].includes(move.kind || "") &&
+            m.tick < this.projectileAt) ||
+          (action !== "super" && move.dash && m.tick < this.dashAt)
+        )
+          out = {};
       }
     }
     this.decision = out;

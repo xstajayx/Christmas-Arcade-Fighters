@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { fighters } from "../fighters/data";
-import { isolateFrame } from "./frames";
+import { isolateFrame, touchesCellEdge } from "./frames";
 export const stageNames = [
   "VILLAGE SQUARE",
   "SEASIDE PIER",
@@ -124,12 +124,24 @@ export function createFighterArt(
       }
       read.clearRect(0, 0, 256, 256);
       read.drawImage(src, sx, sy, w, 256, 0, 0, w, 256);
-      const isolated = isolateFrame(
+      let isolated = isolateFrame(
         read.getImageData(0, 0, w, 256).data,
         w,
         256,
         special ? 105 : 86,
       );
+      // Wide falls/kicks can continue into the transparent gutter of a 192px cell.
+      // Read a guarded margin only at a clipped body edge; keep the same world anchor.
+      if (!special && touchesCellEdge(isolated, w)) {
+        read.clearRect(0, 0, 256, 256);
+        read.drawImage(src, sx - 32, sy, 256, 256, 0, 0, 256, 256);
+        isolated = isolateFrame(
+          read.getImageData(0, 0, 256, 256).data,
+          256,
+          256,
+          118,
+        );
+      }
       ctx.putImageData(
         new ImageData(isolated.pixels, 256, 256),
         (frame % 8) * 256,

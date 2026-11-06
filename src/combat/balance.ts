@@ -1,6 +1,8 @@
 // World units and 60 Hz simulation ticks. Keep tuning separate from rendering.
 export const balance = {
   pushHeight: 65,
+  superReferenceHealth: 1200,
+  superFraction: 0.28,
   healthScale: 11.5,
   damageScale: 4.5,
   acceleration: 0.45,
