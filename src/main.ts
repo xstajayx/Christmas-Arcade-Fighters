@@ -7,6 +7,7 @@ import {
   fighters,
   roster,
   fighterById,
+  getMove,
   type FighterId,
   signatures,
   endings,
@@ -500,7 +501,7 @@ function begin() {
   }
 }
 function buildHud() {
-  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><div class="name-line"><b>${fighterById(chosen).name}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><div class="name-line"><b>${fighterById(opponent).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><button id="fullscreen-game" aria-label="Fullscreen game">⛶</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1">${fighterById(chosen).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2">${fighterById(opponent).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? '<div class="training-bar"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span><label><input type="checkbox" id="show-hitboxes"> HITBOXES</label><button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button><button id="inspect-sprites">SPRITE INSPECTOR</button></div>' : ""}`;
+  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><div class="name-line"><b id="fighter-name-p1">${fighterById(match!.fighters[0].id).name}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><div class="name-line"><b id="fighter-name-p2">${fighterById(match!.fighters[1].id).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><button id="fullscreen-game" aria-label="Fullscreen game">⛶</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1"></span><span class="special-moves" id="moves-p1"></span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2"></span><span class="special-moves" id="moves-p2"></span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? '<div class="training-bar"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span><label><input type="checkbox" id="show-hitboxes"> HITBOXES</label><button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button><button id="inspect-sprites">SPRITE INSPECTOR</button></div>' : ""}`;
   $("#pause-button").onclick = () => pause();
   $("#fullscreen-game").onclick = () => {
     void fullscreen();
@@ -591,11 +592,21 @@ function renderHud() {
       f.health < f.maxHealth * 0.25,
     );
     $(`#meter-${id}`).style.width = f.meter + "%";
-    $(`#special-${id}`).classList.toggle("ready", f.meter >= 40);
-    $(`#special-${id}`).textContent =
-      f.meter >= 40
-        ? `SPECIAL READY · ${Math.floor(f.meter)}%`
-        : `SPECIAL · ${Math.floor(f.meter)}%`;
+    const sp1 = getMove(f.id, "special", f.profile, f.bossPhase),
+      sp2 = getMove(f.id, "special2", f.profile, f.bossPhase);
+    $(`#fighter-name-${id}`).textContent = fighterById(f.id, f.profile).name;
+    $(`#special-${id}`).classList.toggle(
+      "ready",
+      f.meter >= Math.min(sp1.cost, sp2.cost),
+    );
+    html(
+      $(`#special-${id}`),
+      `<span class="special-kind">SPECIAL${f.meter >= Math.min(sp1.cost, sp2.cost) ? " READY" : ""}</span> <b>${Math.floor(f.meter)}%</b>`,
+    );
+    html(
+      $(`#moves-${id}`),
+      `<span class="${f.move === "special2" ? "" : "active"}">SP1 ${sp1.name}</span><span class="${f.move === "special2" ? "active" : ""}">SP2 ${sp2.name}</span>`,
+    );
     const ready = f.superMeter >= 100;
     if (ready && !$(`#super-${id}`).classList.contains("charged")) {
       sound.play("ready");
@@ -642,8 +653,20 @@ function renderHud() {
       `${stats.hits} HITS · ${stats.damage} DAMAGE · BEST ${maxCombo}`;
   for (let i = 0; i < 2; i++) {
     const f = m.fighters[i];
-    $(`#super-p${i + 1}`).textContent =
-      `${f.superMeter >= 100 ? "SUPER READY" : signatures[f.id][3].toUpperCase()} ${Math.floor(f.superMeter)}%`;
+    const superName = getMove(
+      f.id,
+      "super",
+      f.profile,
+      f.bossPhase,
+    ).name!.toUpperCase();
+    html(
+      $(`#super-p${i + 1}`),
+      `${f.superMeter >= 100 ? "SUPER READY" : "SUPER"}<em class="super-name">${f.superMeter >= 100 ? "" : " · " + superName}</em> · <b>${Math.floor(f.superMeter)}%</b>`,
+    );
+    $(`#super-p${i + 1}`).setAttribute(
+      "aria-label",
+      `${fighterById(f.id).name}: ${superName}, Super ${Math.floor(f.superMeter)}%`,
+    );
     $(`#super-p${i + 1}`).classList.toggle("ready", f.superMeter >= 100);
   }
   if (tutorialActive) {

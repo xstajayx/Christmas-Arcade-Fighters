@@ -604,7 +604,8 @@ function updateThrow(m: Match) {
   a.x = clamp(t.attackerX + t.direction * 18 * pull);
   a.facing = t.direction;
   b.facing = t.direction === 1 ? -1 : 1;
-  const holdX = a.x + t.direction * (37 - lift * 15);
+  // Keep shoulders within reach rather than pulling both body centres together.
+  const holdX = a.x + t.direction * (92 - lift * 70);
   b.x = clamp(t.startX + (holdX - t.startX) * pull);
   b.y = GROUND - lift * 60;
   b.vy = 0;
@@ -619,7 +620,7 @@ function updateThrow(m: Match) {
   });
   b.state = "knockdown";
   b.stun = Math.max(35, b.stun);
-  b.frame = 14;
+  b.frame = 0;
   b.vy = -6.2;
   b.vx = t.direction * 7;
   a.vx = -t.direction * 1.2;

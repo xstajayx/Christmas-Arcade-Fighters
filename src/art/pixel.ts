@@ -1,4 +1,4 @@
-import { stageSource } from "./stages";
+import { stageSource, stageFloor } from "./stages";
 import Phaser from "phaser";
 import { fighters } from "../fighters/data";
 import { isolateFrame, touchesCellEdge } from "./frames";
@@ -52,7 +52,32 @@ export function createArt(
             : (scene.textures
                 .get("v3-environment")
                 .getSourceImage() as HTMLImageElement);
-        c.drawImage(source, rect.x, rect.y, rect.w, rect.h, 0, 0, 800, 450);
+        const floor = stageFloor(stage),
+          cut = Math.round(rect.h * floor.source);
+        // Abutting source regions: overscan must not push the painted floor below
+        // the physical feet. Every source row is used once, with no pasted floor.
+        c.drawImage(
+          source,
+          rect.x,
+          rect.y,
+          rect.w,
+          cut,
+          0,
+          0,
+          800,
+          floor.target,
+        );
+        c.drawImage(
+          source,
+          rect.x,
+          rect.y + cut,
+          rect.w,
+          rect.h - cut,
+          0,
+          floor.target,
+          800,
+          450 - floor.target,
+        );
       }
       // Overlay slots remain transparent: atmosphere is independently animated in Arena.
       scene.textures.addCanvas(`stage-${stage}-${layer}`, canvas);
@@ -124,6 +149,7 @@ export function createFighterArt(
         bounds: isolated.bounds,
         pivot: isolated.pivot,
         offset: isolated.offset,
+        contacts: isolated.contacts,
       });
     }
     const tex = scene.textures.addCanvas(key, canvas)!;
