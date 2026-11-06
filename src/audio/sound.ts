@@ -1,3 +1,4 @@
+import { AnnouncementGate } from "./announcements";
 export type MusicTrack =
   | "menu"
   | "village"
@@ -26,6 +27,8 @@ const themes: Record<MusicTrack, number[]> = {
   ending: [60, 64, 67, 72, 76, 74, 72, 67, 69, 72, 76, 79, 76, 72, 67, 60],
 };
 export class Sound {
+  private announcements = new AnnouncementGate();
+  private transition = 0;
   private ctx: AudioContext | null = null;
   private melody = 0;
   private interval: ReturnType<typeof setInterval> | null = null;
@@ -77,6 +80,7 @@ export class Sound {
   setTrack(track: MusicTrack) {
     if (this.track !== track) {
       this.track = track;
+      this.transition = performance.now();
       this.melody = 0;
     }
   }
@@ -160,7 +164,10 @@ export class Sound {
   }
   async announce(id: string, text: string) {
     if (this.muted || this.announcer <= 0) return;
+    const ticket = this.announcements.reserve(id, performance.now());
+    if (ticket === null) return;
     await this.voiceManifest;
+    if (!this.announcements.current(ticket)) return;
     const file = this.voiceFiles[id];
     if (file && this.ctx) {
       try {
@@ -171,6 +178,12 @@ export class Sound {
           buffer = await this.ctx.decodeAudioData(await r.arrayBuffer());
           this.voiceBuffers.set(id, buffer);
         }
+        if (
+          !this.announcements.current(ticket) ||
+          this.muted ||
+          this.announcer <= 0
+        )
+          return;
         this.speaking?.stop();
         const source = this.ctx.createBufferSource(),
           gain = this.ctx.createGain();
@@ -188,7 +201,11 @@ export class Sound {
         console.warn("Announcer clip failed:", id, error);
       }
     }
-    if (this.speechFallback && "speechSynthesis" in window) {
+    if (
+      this.announcements.current(ticket) &&
+      this.speechFallback &&
+      "speechSynthesis" in window
+    ) {
       window.speechSynthesis.cancel();
       const voice = new SpeechSynthesisUtterance(text);
       voice.pitch = 0.7;
@@ -199,29 +216,37 @@ export class Sound {
   }
   private musicTick() {
     if (!this.ctx || this.ctx.state !== "running") return;
+    const fade = Math.min(1, (performance.now() - this.transition) / 400);
+    const volume = this.music * fade;
     const notes = themes[this.track],
       note = notes[this.melody % notes.length];
     this.tone(
       440 * 2 ** ((note - 69) / 12),
       0.15,
-      this.music * 0.3,
+      volume * 0.3,
       this.track === "boss" ? "square" : "triangle",
     );
     if (this.melody % 4 === 0)
       this.tone(
         440 * 2 ** ((note - 24 - 69) / 12),
         0.32,
-        this.music * 0.3,
+        volume * 0.3,
         "triangle",
       );
     if (this.melody % 2 === 0)
       this.tone(
         this.melody % 4 === 0 ? 65 : 120,
         0.08,
-        this.music * 0.18,
+        volume * 0.18,
         "square",
         35,
       );
+    // Bell partials share the stage motif; quieter winter arrangements leave space.
+    if (this.melody % (this.track === "forest" ? 4 : 2) === 0) {
+      const bell = 880 * 2 ** ((note - 69) / 12);
+      this.tone(bell, 0.35, volume * 0.16, "sine");
+      this.tone(bell * 2.76, 0.12, volume * 0.06, "sine");
+    }
     this.melody++;
   }
   suspend() {

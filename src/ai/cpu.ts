@@ -69,7 +69,7 @@ export class CPU {
       owner.stun === 0
     )
       this.restUntil =
-        m.tick + (owner.id === "santa" ? 20 - owner.bossPhase * 5 : 16);
+        m.tick + (owner.id === "santa" ? 24 - owner.bossPhase * 5 : 24);
     this.ownAttack = attacking;
     if (owner.profile === "boss" && m.tick < this.restUntil) return {};
     if (m.tick < this.next) return this.decision;
@@ -106,7 +106,7 @@ export class CPU {
         Math.sign(me.x - p.x) === Math.sign(p.vx),
     );
     if (dummy === "attack")
-      out = dist > 75 ? toward : this.turn % 2 ? { kick: true } : {};
+      out = dist > 124 ? toward : this.turn % 2 ? { kick: true } : {};
     else if (me.confirmed && me.state === "attack" && me.move === "punch")
       out = me.meter >= 40 && r < 0.45 ? { special: true } : { kick: true };
     else if (this.turn % 2 === 0 && me.state !== "walk") out = {};
@@ -120,7 +120,7 @@ export class CPU {
     else if (
       canReact &&
       foe.state === "attack" &&
-      dist < 110 &&
+      dist < 145 &&
       !punish &&
       r < cfg.guard
     )
@@ -142,7 +142,7 @@ export class CPU {
       r < 0.42
     )
       out = { special: true };
-    else if (dist > 75)
+    else if (dist > 124)
       out = {
         ...toward,
         up: dist > 180 && r < 0.12,
@@ -151,14 +151,14 @@ export class CPU {
     else if (r < cfg.aggression + phase * 0.03 || punish) {
       if (me.meter >= 35 && r < 0.35)
         out =
-          me.id === "nash" && dist < 47
+          me.id === "nash" && dist < 132
             ? { special2: true }
             : r < 0.12
               ? { special3: true }
               : r < 0.24
                 ? { special2: true }
                 : { special: true };
-      else if (dist < 45 && r < 0.22) out = { grab: true };
+      else if (dist < 132 && r < 0.22) out = { grab: true };
       else
         out =
           r < 0.62
@@ -166,7 +166,7 @@ export class CPU {
             : { kick: true, heavy: !!punish && r > 0.8 };
     } else out = me.health < foe.health && r > 0.87 ? away : away;
     if (!dummy && me.state !== "attack" && this.turn % 2 !== 0) {
-      if (this.style === "throw" && dist < 48 && r < 0.6) out = { grab: true };
+      if (this.style === "throw" && dist < 132 && r < 0.6) out = { grab: true };
       if (
         this.style === "projectile" &&
         dist > 140 &&
@@ -183,17 +183,17 @@ export class CPU {
         out = { ...away, down: foe.move === "low" };
       if (this.style === "rush" && dist > 100)
         out = { ...toward, dash: r > 0.4 };
-      if (this.style === "combo" && me.confirmed && dist < 90)
+      if (this.style === "combo" && me.confirmed && dist < 135)
         out = { kick: true };
       if (this.style === "rob" && me.meter >= 35) {
-        if (dist < 50 && r < 0.45) out = { special3: true };
+        if (dist < 132 && r < 0.45) out = { special3: true };
         else if (dist > 100 && r < 0.55) out = { special2: true };
-        else if (dist < 90 && r < 0.65) out = { special: true };
+        else if (dist < 135 && r < 0.65) out = { special: true };
       }
       if (this.style === "santa" && me.meter >= 40) {
         if (
           phase === 0 &&
-          dist < 95 &&
+          dist < 140 &&
           canReact &&
           foe.state === "attack" &&
           r < 0.65
@@ -205,6 +205,19 @@ export class CPU {
       }
     }
     if (dummy === "random" && r > 0.8) out = { up: true, ...toward };
+    if (me.profile !== "boss") {
+      // Two fixed primary specials. Retain the extra scripted repertoire only on bosses.
+      if (out.special3) {
+        delete out.special3;
+        out.special2 = true;
+      }
+      if (out.special || out.special2) {
+        delete out.special;
+        delete out.special2;
+        if (dist > 130) out.special2 = true;
+        else out.special = true;
+      }
+    }
     this.decision = out;
     return out;
   }

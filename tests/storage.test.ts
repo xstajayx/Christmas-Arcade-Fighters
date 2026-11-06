@@ -44,7 +44,7 @@ it("migrates old controls and preserves a validated resumed campaign", () => {
   expect(s.version).toBe(3);
   expect(s.settings.keys.super).toBe("Space");
   expect(s.settings.keys.special2).toBe("KeyO");
-  expect(new Set(Object.values(s.settings.keys)).size).toBe(11);
+  expect(new Set(Object.values(s.settings.keys)).size).toBe(10);
   expect(s.campaign).toMatchObject({
     fighter: "bucket",
     index: 8,

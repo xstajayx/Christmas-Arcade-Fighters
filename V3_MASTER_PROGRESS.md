@@ -1,0 +1,30 @@
+# V3 Ultimate master progress — 6 November 2026
+
+Branch: feat/v3-master-foundations. Audited baseline 7fc0818; updated to main merge 939f222 (identical baseline source tree) during verification. Earlier V3 evidence remains historical; this report does not assume V3.1/V3.2 completed. COMPLETE means an implemented/checked code requirement, not blanket production acceptance.
+
+| Directive phase | Status | Evidence / remaining work |
+|---|---|---|
+| 0 Audit | COMPLETE | V3_MASTER_AUDIT.md; source and prior repository captures inspected before edits |
+| 1 Collision/range | IN PROGRESS | Width-specific shared pushboxes; stable order/corner correction; mirrored hurt/hit/throw/projectile boxes; debug uses actual functions. New unit tests cover non-overlap, arm-length contacts, farther kicks, whiffs, both facings and 300-tick corner pressure. Final human contact-endpoint/art review remains |
+| 2 Animation | IN PROGRESS | Acceleration/braking, distance-driven 96-unit stride, stopped wall animation and distinct dash state/pose sequence. Existing anchored extraction retained. Fully authored natural back-walk, directional jumps, linked throw poses, extended victory and source anatomy need further art direction |
+| 3 Camera | IN PROGRESS | Existing 1.25 initial framing, separation/jump bounds, smooth contraction, fixed HUD and reduced effects retained; browser checks passed; candidate screenshots/video reviewed; physical/art gates remain |
+| 4 Grab/throw | IN PROGRESS | Linked delayed damage, lift/release, break, immunity and corner eligibility retained; detection adjusted for physical spacing. Tests pass; richer coordinated source poses remain open |
+| 5 Directional guard | COMPLETE | Away/down-away rules and recovery restrictions retained; no Block button; guard tests pass |
+| 6 Two specials | COMPLETE | Every playable profile has fixed SP1 dash/SP2 projectile regardless of direction. Keyboard I/O, separate touch buttons, Y/LB gamepad. Independent grab/Super. Boss-only additional repertoire retained. Beardy holly bolt has damage, travel, guard interaction and expiry |
+| 7 Balance | IN PROGRESS | Approx 1100–1350 regular health, distinct normalized boss health, baseline damage targets, existing scaling/juggle/contact protections; centralized balance.ts. 16 final CPU rounds measured 31–51 seconds (median 43); 45–75-second typical human target and all-character human balance remain unapproved |
+| 8 HUD | IN PROGRESS | Larger segmented special charge, percentages, ready labels, separate Super charge display, full-charge sound/pulse, reduced-motion support. Phone viewport captures reviewed; physical ergonomics/approval remain |
+| 9 Supers | COMPLETE | Existing in-arena multi-hit effects/finisher and separate meter retained; no portrait panels. Boss/standard profiles remain separate |
+| 10 Options | IN PROGRESS | Audio/Controls/Gameplay categories, Save & Return, persistent rounds/timer/shake, fullscreen action, existing volumes/remapping/touch preferences. Single outer scroll; category fit checked in landscape captures; physical usability review remains. Six combat buttons can be reassigned with automatic swaps to prevent duplicates; default mappings remain compatible |
+| 11 Mobile | IN PROGRESS | Six distinct attack controls plus joystick/pause, safe areas and multi-touch retained. Browser input/layout/target-separation checks passed; physical-device comfort blocked |
+| 12 Announcer | BLOCKED production | Priority/cooldown/stale async decode protection implemented. 31 existing robotic WAVs are fallback only. No professional voice tool/recordings supplied; outstanding exact lines in release notes |
+| 13 Music | IN PROGRESS | Distinct existing original stage motifs, bell partials, fade-in on changes, boss phase intensity retained. These procedural arrangements are not finished composed/approved soundtracks; human listening/mix remains |
+| 14 Graphics | IN PROGRESS | Existing original fighters/eight scenes, pixel-scaled framing and atmosphere retained. New holly-bolt pixel silhouette. No claim of reauthored fighter anatomy/foreground art; these require further asset production |
+| 15 Campaign | IN PROGRESS | Ten-level route and scoring/continues/ending preserved. Seeded real-simulation unit route passes new rules; final browser ten-bout path passed, including unlocks/reload |
+| 16 Rob Father | IN PROGRESS | Working boss repertoire/phase/arena/unlock preserved; balanced player now uses fixed dash/projectile contract; new balance human approval pending |
+| 17 Santa | IN PROGRESS | Three-phase boss repertoire/arena/music/unlock preserved; player fixed specials and normalized stats; browser checks passed; candidate screenshots/video reviewed; physical/art gates remain |
+| 18 Unlock/save | COMPLETE | Existing genuine-win conditions/versioned legacy migration retained. Removed obsolete third-primary binding without discarding scores/progress/settings. New options validated |
+| 19 CPU | IN PROGRESS | Distinct route styles and reaction budgets retained; normal CPU chooses fixed primary by range, boss patterns retain extra moves. New all-matchup human evaluation remains |
+| 20 QA | IN PROGRESS | 69 unit checks, type/lint/build/artifact checks passed; full 78-case run exposed seven obsolete assertions, then final focused regression passed 20 checks with 4 intentional skips; 44 final screenshots and a 94.60-second production video reviewed without page errors; complete matrix recovered as passed; final debug-alignment regression passed all 9 checks. New tests cover foundations/announcer ordering |
+| 21 Release | IN PROGRESS | Master audit/progress/test/release documents maintained. No merge/deploy. API/live host remain outside runtime network policy |
+
+No professional voice, final source animation, finished composed soundtrack, physical Safari/controller/mobile performance or premium completion is claimed. No user-supplied new video was accessible; repository recordings were available. See release notes for exact outstanding recordings and art gates.

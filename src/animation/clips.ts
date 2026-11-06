@@ -1,3 +1,4 @@
+import { balance } from "../combat/balance";
 import type { Fighter } from "../combat/engine";
 import { getMove } from "../fighters/data";
 export const FRAME_WIDTH = 192,
@@ -46,8 +47,9 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
       : back
         ? clips.back
         : clips.forward;
-    time = tick;
-    speed = f.state === "dash" ? 4 : f.id === "nash" ? 5 : 3;
+    if (f.state === "dash") sequence = clips.dash;
+    time = f.walkDistance;
+    speed = balance.strideDistance / sequence.length;
   }
   if (f.state === "jump") {
     sequence = clips.jump;
@@ -133,13 +135,14 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
     if (f.move === "heavyKick") return clips.heavyKick[phase];
     if (f.move.startsWith("special") || f.move === "super") {
       const row =
-        f.move === "special"
+        getMove(f.id, f.move, f.profile, f.bossPhase).poseRow ??
+        (f.move === "special"
           ? 0
           : f.move === "special2"
             ? 1
             : f.move === "special3"
               ? 2
-              : 3;
+              : 3);
       // Each signature has its own six genuine poses. Multi-hit Supers alternate
       // two contact poses on the same simulation clock as their impact cadence.
       const contact =

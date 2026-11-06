@@ -75,17 +75,21 @@ test("loads, navigates, selects a fighter and starts responsive combat", async (
 test("settings persist and all stages are selectable", async ({ page }) => {
   await page.goto("/");
   await openSettings(page);
+  await page.getByRole("button", { name: "GAMEPLAY", exact: true }).click();
   await page.locator("#difficulty").selectOption("hard");
   await page.locator("#reduced").check();
+  await page.getByRole("button", { name: "CONTROLS", exact: true }).click();
+  await page.getByRole("button", { name: "KEYBOARD", exact: true }).click();
   await page.locator("[data-action=remap-punch]").click();
   await page.keyboard.press("KeyF");
-  await page.getByRole("button", { name: "DONE" }).click();
+  await page.getByRole("button", { name: "SAVE & RETURN" }).click();
   await page.reload();
   await openSettings(page);
+  await page.getByRole("button", { name: "GAMEPLAY", exact: true }).click();
   await expect(page.locator("#difficulty")).toHaveValue("hard");
   await expect(page.locator("#reduced")).toBeChecked();
   await expect(page.locator("[data-action=remap-punch] kbd")).toHaveText("F");
-  await page.getByRole("button", { name: "DONE" }).click();
+  await page.getByRole("button", { name: "SAVE & RETURN" }).click();
   if (
     await page.getByRole("button", { name: "ARCADE", exact: true }).isVisible()
   )
@@ -113,6 +117,8 @@ test("settings persist and all stages are selectable", async ({ page }) => {
   }
 });
 test("CPU can win a full match, results and rematch work", async ({ page }) => {
+  // Two longer-health rounds plus intro/results; do not accelerate this real-time check.
+  test.setTimeout(240000);
   await page.addInitScript(() => {
     localStorage.setItem(
       "caf-save",
@@ -126,7 +132,7 @@ test("CPU can win a full match, results and rematch work", async ({ page }) => {
   await launch(page, "ARCADE");
   await expect
     .poll(async () => (await state(page)).screen, {
-      timeout: 70000,
+      timeout: 210000,
       intervals: [500],
     })
     .toBe("results");

@@ -1,3 +1,4 @@
+import { balance, normalDamage, strikeReach } from "../combat/balance";
 export type FighterId =
   "jamie" | "nash" | "bucket" | "beardy" | "frost" | "rob" | "santa";
 export interface FighterDef {
@@ -139,12 +140,16 @@ export const fighterById = (
 ): FighterDef => {
   const base = id === "frost" ? frost : roster.find((f) => f.id === id)!;
   if (profile === "boss" && id === "frost")
-    return { ...base, health: 112, power: 1 };
+    return { ...base, health: 1500, power: 1 };
   if (profile === "boss" && id === "rob")
-    return { ...base, health: 136, power: 1.06 };
+    return { ...base, health: 1750, power: 1.06 };
   if (profile === "boss" && id === "santa")
-    return { ...base, health: 144, power: 1.03 };
-  return base;
+    return { ...base, health: 1900, power: 1.03 };
+  return {
+    ...base,
+    health: Math.round(base.health * balance.healthScale),
+    special: primarySpecials[id][0],
+  };
 };
 export type MoveId =
   | "punch"
@@ -189,6 +194,7 @@ export interface Move {
   cancel?: MoveId[];
   name?: string;
   armour?: [number, number];
+  poseRow?: number;
   bursts?: number;
   burstGap?: number;
 }
@@ -272,7 +278,7 @@ export const moves: Record<MoveId, Move> = {
     active: 3,
     recovery: 28,
     damage: 15,
-    range: 39,
+    range: 49,
     stun: 35,
     knockback: 55,
     cost: 0,
@@ -567,6 +573,68 @@ export function getMove(
       });
   }
   if (move === "heavyKick" || move === "air") m.level = "high";
+  m.damage = Math.round(m.damage * balance.damageScale);
+  if (move in normalDamage)
+    m.damage = normalDamage[move as keyof typeof normalDamage];
+  if (move === "grab" && id === "nash") m.damage = 100;
+  if (profile === "standard" && (move === "special" || move === "special2")) {
+    const dash = move === "special";
+    const dashRows = {
+      jamie: 1,
+      nash: 0,
+      bucket: 1,
+      beardy: 2,
+      frost: 1,
+      rob: 1,
+      santa: 1,
+    };
+    const projectileRows = {
+      jamie: 0,
+      nash: 2,
+      bucket: 0,
+      beardy: 1,
+      frost: 0,
+      rob: 0,
+      santa: 0,
+    };
+    Object.assign(m, {
+      kind: dash ? "dash" : "projectile",
+      level: "mid",
+      name: primarySpecials[id][dash ? 0 : 1],
+      startup: dash ? (id === "bucket" ? 10 : 14) : 18,
+      active: dash ? 12 : 5,
+      recovery: dash ? 26 : 29,
+      damage: dash
+        ? id === "nash" || id === "rob"
+          ? 105
+          : 88
+        : id === "bucket"
+          ? 65
+          : 78,
+      range: dash ? 72 : 60,
+      cost: dash ? 40 : 35,
+      dash: dash ? (id === "bucket" ? 5 : 4) : 0,
+      projectileSpeed: id === "bucket" ? 7 : 5,
+      hits: 1,
+      hitGap: undefined,
+      bursts: undefined,
+      armour: undefined,
+      invulnerable: undefined,
+      launch: undefined,
+      poseRow: dash ? dashRows[id] : projectileRows[id],
+    });
+  }
+  if (move === "punch" || move === "kick")
+    m.range =
+      (strikeReach[id][move === "punch" ? 0 : 1] - 13) /
+      fighterById(id, profile).reach;
+  if (["heavyPunch", "heavyKick", "low", "air"].includes(move))
+    m.range =
+      ((move === "heavyKick" ? 98 : move === "heavyPunch" ? 90 : 88) - 13) /
+      fighterById(id, profile).reach;
+  if (profile === "standard" && move === "special")
+    m.range = (96 - 13) / fighterById(id).reach;
+  if (m.kind === "throw") m.range = (97 - 13) / fighterById(id, profile).reach;
   return m;
 }
 
@@ -582,4 +650,14 @@ export const endings: Record<FighterId, string> = {
   santa:
     "Santa handed the champion’s bell to the village. The finest delivery was Christmas spirit itself.",
   frost: "Even the longest night gives way to a Christmas dawn.",
+};
+
+export const primarySpecials: Record<FighterId, [string, string]> = {
+  jamie: ["Chimney Charge", "Ember Bolt"],
+  nash: ["Antler Charge", "Present Shot"],
+  bucket: ["Sleigh Dash", "Snowball Shuffle"],
+  beardy: ["Evergreen Rush", "Holly Bolt"],
+  frost: ["Ice Rush", "Frozen Bolt"],
+  rob: ["Sleigh Charge", "Collection Gift"],
+  santa: ["Reindeer Rush", "Gift Storm"],
 };

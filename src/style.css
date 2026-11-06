@@ -2583,3 +2583,269 @@ main {
   width: min(100vw, 177.7778dvh);
   height: min(100dvh, 56.25vw);
 }
+
+/* V3 Ultimate options and readable charge feedback. */
+.options-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+.options-tabs button {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #6c7e93;
+  background: #14253b;
+  color: #fff;
+  font: inherit;
+}
+.options-tabs [aria-pressed="true"] {
+  background: #f7d366;
+  color: #122034;
+  border-color: #fff0a5;
+}
+.settings-panel .settings-grid {
+  display: block;
+  overflow: visible;
+}
+.option-page {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+}
+.option-page[hidden] {
+  display: none;
+}
+.option-page label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+}
+.option-page input[type="range"] {
+  max-width: 48%;
+}
+.option-page > div {
+  grid-column: 1/-1;
+}
+.meter-frame {
+  height: 12px;
+  border: 2px solid #c1d3de;
+  background: repeating-linear-gradient(
+    90deg,
+    #142337 0 15px,
+    #334158 15px 17px
+  );
+}
+.meter-frame i {
+  height: 100%;
+  transition: width 100ms linear;
+  background: repeating-linear-gradient(
+    90deg,
+    #62cfcd 0 15px,
+    #a9f3de 15px 17px
+  );
+}
+.super-meter-row .charged {
+  color: #ffde6b;
+  font-weight: bold;
+  animation: ready-pulse 1s ease-in-out infinite alternate;
+}
+@keyframes ready-pulse {
+  to {
+    filter: brightness(1.35);
+    text-shadow: 0 0 5px #ffcc55;
+  }
+}
+body.reduced .charged {
+  animation: none;
+}
+.actions .special2 {
+  grid-column: 3;
+  grid-row: 2;
+  color: #b0f4ea;
+}
+.actions .special {
+  grid-column: 3;
+  grid-row: 1;
+}
+@media (max-height: 550px) {
+  .settings-panel {
+    padding: 12px 18px;
+  }
+  .settings-panel h2 {
+    font-size: 22px;
+    margin: 0;
+  }
+  .option-page {
+    gap: 3px 16px;
+  }
+  .option-page label {
+    min-height: 26px;
+    font-size: 10px;
+  }
+  .options-tabs {
+    margin: 5px 0;
+  }
+  .options-tabs button {
+    padding: 6px;
+  }
+  .option-page .key-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .option-page p {
+    margin: 3px 0;
+  }
+}
+.actions .super {
+  grid-area: 1/1;
+}
+.actions .punch {
+  grid-area: 1/2;
+}
+.actions .kick {
+  grid-area: 1/3;
+}
+.actions .grab {
+  grid-area: 2/1;
+}
+.actions .special {
+  grid-area: 2/2;
+}
+.actions .special2 {
+  grid-area: 2/3;
+}
+#overlay:has(.settings-panel) {
+  overflow-y: auto;
+  align-items: start;
+}
+.settings-panel {
+  max-height: none;
+  overflow: visible;
+}
+.super-meter-row span::after {
+  content: "";
+  display: block;
+  height: 7px;
+  width: var(--charge, 0%);
+  max-width: 100%;
+  margin-top: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    #f7d366 0 12px,
+    #88662c 12px 14px
+  );
+  transition: width 100ms linear;
+}
+.super-meter-row span {
+  width: 30%;
+  min-height: 20px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .charged {
+    animation: none !important;
+  }
+}
+
+.meter-row span,
+.super-meter-row span {
+  font-size: clamp(9px, 1cqw, 14px);
+  line-height: 1.3;
+}
+.meter-frame {
+  height: 16px;
+}
+.pad-settings {
+  grid-column: 1/-1;
+  padding: 8px;
+  border: 1px solid #6c7e93;
+}
+.pad-settings summary {
+  cursor: pointer;
+  padding: 8px;
+  color: #f7d366;
+}
+#options-fullscreen {
+  background: #142337;
+  color: #f7d366;
+  border: 2px solid #f7d366;
+  font: inherit;
+  padding: 8px;
+}
+.control-tabs {
+  display: flex;
+  gap: 8px;
+  grid-column: 1/-1;
+  margin-bottom: 8px;
+}
+.control-tabs button {
+  flex: 1;
+  padding: 8px;
+  background: #142337;
+  color: #f7d366;
+  border: 1px solid #73879d;
+  font: inherit;
+}
+.control-tabs [aria-pressed="true"] {
+  background: #f7d366;
+  color: #142337;
+}
+.control-page {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+}
+.control-page[hidden],
+.pad-settings[hidden] {
+  display: none;
+}
+@media (pointer: coarse) {
+  .training-bar {
+    flex-wrap: nowrap;
+    gap: 4px;
+    min-height: 28px;
+    top: 27%;
+  }
+  .training-bar #training-stats {
+    display: none;
+  }
+  .training-bar label {
+    white-space: nowrap;
+  }
+  .training-bar button,
+  .training-bar select {
+    font-size: 7px;
+    padding: 3px;
+  }
+  .meter-row {
+    top: 15%;
+    bottom: auto;
+  }
+  .super-meter-row {
+    top: 22%;
+    bottom: auto;
+  }
+  .super-meter-row span {
+    font-size: 8px;
+  }
+  .meter-row span {
+    font-size: 8px;
+  }
+  .meter-frame {
+    height: 10px;
+  }
+}
+@media (pointer: coarse) {
+  #hud:has(.training-bar) .training-bar {
+    top: 21%;
+    left: 23%;
+    right: 23%;
+    gap: 2px;
+  }
+  #hud:has(.training-bar) .meter-row > div {
+    width: 18%;
+  }
+  #hud:has(.training-bar) .super-meter-row span {
+    width: 18%;
+  }
+}

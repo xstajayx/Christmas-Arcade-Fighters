@@ -56,8 +56,8 @@ Eight arenas are selectable, including the Collection Hall and Santa’s Throne 
 | Punch / kick | J / K | Numpad 1 / 2 | South / east |
 | Guard | Hold **away** from opponent | Hold away | Hold away |
 | Low guard | Down + away | Down + away | Down + away |
-| Special 1 | I | Numpad 5 | North |
-| Special 2 / 3 | O / P | Numpad 6 / 7 | Forward / down + north |
+| SP1 Dash | I | Numpad 5 | North (Y / Triangle) |
+| SP2 Projectile | O | Numpad 6 | LB / L1 |
 | Super | Space | Numpad 4 | RB |
 | Grab / throw break | U | Numpad 0 | West |
 | Heavy modifier | Left Shift | Numpad 8 | Right trigger |
@@ -66,9 +66,9 @@ Eight arenas are selectable, including the Collection Hall and Santa’s Throne 
 
 Holding away walks backwards outside a threat, then guards eligible incoming attacks. Low attacks beat standing guard; overheads beat crouching guard; mids can be guarded either way. Committed attacks cannot turn into instant guards. Throws beat normal guarding and require a grounded, eligible opponent in range. A successful grab links both bodies, lifts the defender and releases into a throw/landing; a fresh Grab can break the initial hold. Whiffs recover, and knockdown/throw immunity prevents immediate repeat throws.
 
-Forward + Punch/Kick gives heavy attacks. Crouch + attack gives a low, and jump + attack gives an aerial attack. Specials spend their configured meter cost; Supers spend a separate full meter. Supers stay in the arena with aura, lighting, trails, impacts and camera feedback rather than a portrait pop-up.
+Forward + Punch/Kick gives heavy attacks. Crouch + attack gives a low, and jump + attack gives an aerial attack. SP1 always dashes and SP2 always fires a projectile, including while holding a direction. Gamepad combat buttons can be reassigned in Controls. Specials spend their configured meter cost; Supers spend a separate full meter. Supers stay in the arena with aura, lighting, trails, impacts and camera feedback rather than a portrait pop-up.
 
-Touch controls have five attack buttons, joystick diagonals and independent pointers. Options retain remapping, volume/mute, reduced effects, touch opacity/size/placement, vibration, compact layout and left-handed layout. Lost focus pauses combat and clears inputs.
+Touch controls have six attack buttons (Punch, Kick, Grab, SP1 Dash, SP2 Projectile, Super), joystick diagonals and independent pointers. Options retain remapping, volume/mute, reduced effects, touch opacity/size/placement, vibration, compact layout and left-handed layout. Lost focus pauses combat and clears inputs.
 
 ## Engineering and asset pipeline
 
@@ -85,7 +85,9 @@ Original PNG masters remain in `assets/source/`. Runtime WebPs and WAVs are comm
 
 ## Verification and release limits
 
-See [TESTING.md](TESTING.md), [V3_PROGRESS.md](V3_PROGRESS.md) and `docs/review-v3/` for actual tests, screenshots and recordings. Generated sheets still need art direction for anatomy, foot planting, extended directional jumps/dashes and victory choreography. Robotic announcements are not a studio voice performance. Human balance, physical phones/Safari/controllers, sustained 60 FPS/thermal behavior and low-end texture/download budgets remain open gates.
+Current master directive work: [V3_MASTER_PROGRESS.md](V3_MASTER_PROGRESS.md), [V3_MASTER_TEST_REPORT.md](V3_MASTER_TEST_REPORT.md) and [V3_MASTER_RELEASE_NOTES.md](V3_MASTER_RELEASE_NOTES.md).
+
+Historical V3 evidence: see [TESTING.md](TESTING.md), [V3_PROGRESS.md](V3_PROGRESS.md) and `docs/review-v3/` for actual tests, screenshots and recordings. Generated sheets still need art direction for anatomy, foot planting, extended directional jumps/dashes and victory choreography. Robotic announcements are not a studio voice performance. Human balance, physical phones/Safari/controllers, sustained 60 FPS/thermal behavior and low-end texture/download budgets remain open gates.
 
 The existing Pages workflow installs with `npm ci`, builds/tests the same `dist/` artifact and deploys only from main. Repository-subpath asset references and atomic complete-release offline caching are preserved. Feature branches/PRs do not deploy. See [DEPLOYMENT.md](DEPLOYMENT.md) for the separate repository settings and live-access limits; local success does not establish live publication.
 

@@ -1,0 +1,9 @@
+{
+  "build": "1793926536129",
+  "source": "Recovered test-results/.last-run.json after executor restoration",
+  "result": {
+    "status": "passed",
+    "failedTests": []
+  },
+  "scope": "Complete configured 78-case desktop/Android/iPhone Chromium matrix; intentional skips remain enabled. Terminal totals were not retained. This precedes the debug pushbox display-height alignment, whose default separation threshold remains 65."
+}

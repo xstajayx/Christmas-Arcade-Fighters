@@ -33,7 +33,7 @@ const ready = (a = "jamie", b = "nash") => {
   return m;
 };
 describe("Ultimate combat", () => {
-  it("provides three specials and a named Super for each distinct role", () => {
+  it("provides fixed dash/projectile primaries and a named Super for each distinct role", () => {
     expect(fighterById("nash").health).toBeGreaterThan(
       fighterById("bucket").health,
     );
@@ -56,7 +56,7 @@ describe("Ultimate combat", () => {
     m.fighters[1].x = 570;
     m.fighters[0].meter = 100;
     const hp = m.fighters[1].health;
-    run(m, 18, { special: true });
+    run(m, 20, { special2: true });
     expect(m.projectiles.length).toBe(1);
     run(m, 70);
     expect(m.fighters[1].health).toBeLessThan(hp);
@@ -100,25 +100,17 @@ describe("Ultimate combat", () => {
     run(m, 90);
     expect(m.fighters[0].combo).toBeGreaterThanOrEqual(2);
   });
-  it("Beardy counters a committed attack with a real timed counter window", () => {
-    const m = ready("jamie", "beardy");
-    m.fighters[1].meter = 100;
-    run(m, 15, {}, { special: true });
-    run(m, 9, { punch: true }, {});
-    expect(m.fighters[0].health).toBeLessThan(fighterById("jamie").health);
-    expect(m.fighters[1].health).toBe(fighterById("beardy").health);
-  });
-  it("defensive shield reduces damage and expires", () => {
-    const m = ready("jamie", "beardy");
-    m.fighters[1].meter = 100;
-    run(m, 30, {}, { special2: true });
-    expect(m.fighters[1].guardFrames).toBeGreaterThan(100);
-    run(m, 40);
+  it("Beardy's green projectile actually damages an opponent and expires", () => {
+    const m = ready("beardy", "jamie");
+    m.fighters[1].x = 570;
+    m.fighters[0].meter = 100;
     const hp = m.fighters[1].health;
-    run(m, 8, { punch: true });
-    expect(hp - m.fighters[1].health).toBeLessThan(7);
-    run(m, 200);
-    expect(m.fighters[1].guardFrames).toBe(0);
+    run(m, 20, { special2: true });
+    expect(m.projectiles.length).toBe(1);
+    run(m, 80);
+    expect(m.fighters[1].health).toBeLessThan(hp);
+    expect(m.fighters[0].guardFrames).toBe(0);
+    expect(m.projectiles).toHaveLength(0);
   });
   it("Frost Jamie changes attack phases and applies a defensive transition", () => {
     const m = ready("jamie", "frost");
@@ -239,9 +231,10 @@ it("each signature uses its own valid six-pose row with timed contact", () => {
       const contact = animationFrame(f);
       f.frame = d.startup + d.active + d.recovery - 1;
       const recovery = animationFrame(f);
-      expect(anticipation).toBe(row * 6);
-      expect(contact).toBe(row * 6 + 3);
-      expect(recovery).toBe(row * 6 + 5);
+      const poseRow = d.poseRow ?? row;
+      expect(anticipation).toBe(poseRow * 6);
+      expect(contact).toBe(poseRow * 6 + 3);
+      expect(recovery).toBe(poseRow * 6 + 5);
     }
   }
 });

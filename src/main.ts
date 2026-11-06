@@ -86,7 +86,7 @@ const tutorialGoals = [
   "Jump with joystick up or W.",
   "Close the distance and land a Punch.",
   "Hold away from the dummy to guard. Down-away guards lows.",
-  "Use Special (I). Directions select other specials.",
+  "Use SP1 Dash (I) or SP2 Projectile (O).",
   "Activate your Super (Space / ★).",
 ];
 let maxCombo = 0,
@@ -120,7 +120,10 @@ function applySettings() {
   ] as const)
     document.documentElement.style.setProperty(key, String(value));
   bridge.reduced = save.settings.reduced;
+  bridge.shake = save.settings.shake;
+  document.body.classList.toggle("reduced", save.settings.reduced);
   controls.mapping = save.settings.keys;
+  controls.padMapping = save.settings.padButtons;
   touch.classList.toggle("touch-compact", save.settings.compact);
   touch.classList.toggle("left-handed", save.settings.leftHanded);
   document.documentElement.style.setProperty(
@@ -359,7 +362,7 @@ function stageImage(i: number) {
 function tutorial(fromStart = false) {
   setScreen(
     "tutorial",
-    `<div class="panel tutorial-panel">${chip("A QUICK WARM-UP")}<h2>BRING THE HOLIDAY HEAT.</h2><div class="tutorial-grid"><div><h3>MOVE & DEFEND</h3><p><kbd>${keyName("left")}</kbd> <kbd>${keyName("right")}</kbd> Move <kbd>${keyName("up")}</kbd> Jump <kbd>${keyName("down")}</kbd> Crouch</p><p>Hold away to guard. Hold down-away against lows. Overheads beat crouching guard; grabs beat guarding.</p></div><div><h3>MAKE AN IMPACT</h3><p><kbd>${keyName("punch")}</kbd> Punch <kbd>${keyName("kick")}</kbd> Kick <kbd>${keyName("grab")}</kbd> Grab</p><p><kbd>${keyName("special")}</kbd> Special · costs 40 meter. Fight to refill it. Crouch or jump + attack for new moves.</p></div></div><p class="help-note">Forward + Punch/Kick gives heavy attacks. Neutral Special / Forward Special / Down Special select three moves. Space or ★ spends full Super meter. On touchscreens, hold a direction and tap an attack with another finger. Gamepad: stick / D-pad, A punch, B kick, X grab, Y special, hold away to guard. Start pauses.</p><div class="panel-footer"><span>ESC PAUSES · PLAY FAIR. FIGHT FESTIVE.</span>${button("TRY IT LIVE", "guided", "secondary")}${button(fromStart ? "GOT IT. LET’S FIGHT →" : "BACK TO THE ARCADE →", fromStart ? "begin" : "title", "primary")}</div></div>`,
+    `<div class="panel tutorial-panel">${chip("A QUICK WARM-UP")}<h2>BRING THE HOLIDAY HEAT.</h2><div class="tutorial-grid"><div><h3>MOVE & DEFEND</h3><p><kbd>${keyName("left")}</kbd> <kbd>${keyName("right")}</kbd> Move <kbd>${keyName("up")}</kbd> Jump <kbd>${keyName("down")}</kbd> Crouch</p><p>Hold away to guard. Hold down-away against lows. Overheads beat crouching guard; grabs beat guarding.</p></div><div><h3>MAKE AN IMPACT</h3><p><kbd>${keyName("punch")}</kbd> Punch <kbd>${keyName("kick")}</kbd> Kick <kbd>${keyName("grab")}</kbd> Grab</p><p><kbd>${keyName("special")}</kbd> SP1 Dash · 40 meter. SP2 Projectile (O) · 35 meter. Crouch or jump + attack for new moves.</p></div></div><p class="help-note">Forward + Punch/Kick gives heavy attacks. SP1 Dash and SP2 Projectile stay the same in every direction. Space or ★ spends full Super meter. On touchscreens, hold a direction and tap an attack with another finger. Gamepad: stick / D-pad, A punch, B kick, X grab, Y SP1 Dash, LB SP2 Projectile, RB Super, hold away to guard. Start pauses.</p><div class="panel-footer"><span>ESC PAUSES · PLAY FAIR. FIGHT FESTIVE.</span>${button("TRY IT LIVE", "guided", "secondary")}${button(fromStart ? "GOT IT. LET’S FIGHT →" : "BACK TO THE ARCADE →", fromStart ? "begin" : "title", "primary")}</div></div>`,
   );
 }
 function keyName(action: string) {
@@ -437,6 +440,9 @@ function begin() {
     match.fighters[0].superMeter = 100;
     tutorialStep = 0;
   }
+  match.roundsToWin =
+    mode === "training" || mode === "survival" ? 1 : save.settings.rounds;
+  match.timer = match.roundTicks = save.settings.timer * 60;
   roundAnnounced = 0;
   lastUnlock = null;
   maxCombo = 0;
@@ -556,13 +562,27 @@ function renderHud() {
       id = `p${i + 1}`;
     $(`#health-${id}`).style.width =
       `${(f.health / fighterById(f.id, f.profile).health) * 100}%`;
-    $(`#health-${id}`).classList.toggle("danger", f.health < 30);
+    $(`#health-${id}`).classList.toggle(
+      "danger",
+      f.health < fighterById(f.id, f.profile).health * 0.25,
+    );
     $(`#meter-${id}`).style.width = f.meter + "%";
     $(`#special-${id}`).classList.toggle("ready", f.meter >= 40);
+    $(`#special-${id}`).textContent =
+      f.meter >= 40
+        ? `SPECIAL READY · ${Math.floor(f.meter)}%`
+        : `SPECIAL · ${Math.floor(f.meter)}%`;
+    const ready = f.superMeter >= 100;
+    if (ready && !$(`#super-${id}`).classList.contains("charged"))
+      sound.play("ready");
+    $(`#super-${id}`).classList.toggle("charged", ready);
+    $(`#super-${id}`).style.setProperty("--charge", `${f.superMeter}%`);
     $(`#score-${id}`).textContent = String(f.score).padStart(6, "0");
     html(
       $(`#rounds-${id}`),
-      [0, 1].map((n) => `<i class="${f.wins > n ? "won" : ""}"></i>`).join(""),
+      Array.from({ length: m.roundsToWin }, (_, n) => n)
+        .map((n) => `<i class="${f.wins > n ? "won" : ""}"></i>`)
+        .join(""),
     );
   }
   $("#timer").textContent =
@@ -597,7 +617,7 @@ function renderHud() {
   for (let i = 0; i < 2; i++) {
     const f = m.fighters[i];
     $(`#super-p${i + 1}`).textContent =
-      `${signatures[f.id][3].toUpperCase()} ${Math.floor(f.superMeter)}%`;
+      `${f.superMeter >= 100 ? "SUPER READY" : signatures[f.id][3].toUpperCase()} ${Math.floor(f.superMeter)}%`;
     $(`#super-p${i + 1}`).classList.toggle("ready", f.superMeter >= 100);
   }
   if (tutorialActive) {
@@ -751,7 +771,7 @@ function settings() {
   }
   setScreen(
     "settings",
-    `<div class="panel settings-panel">${chip("TUNE YOUR ARCADE")}<h2>MAKE YOURSELF AT HOME.</h2><div class="settings-grid"><div><label>MUSIC <input id="music" type="range" min="0" max="1" step=".05" value="${save.settings.music}"></label><label>SOUND EFFECTS <input id="effects" type="range" min="0" max="1" step=".05" value="${save.settings.effects}"></label><label>ANNOUNCER <input id="announcer" type="range" min="0" max="1" step=".05" value="${save.settings.announcer}"></label><label>OPTIONAL DEVICE VOICE <input id="speech-fallback" type="checkbox" ${save.settings.speechFallback ? "checked" : ""}></label><p class="small">Original robotic voice pack installed. Device voice is an optional fallback.</p><label>DIFFICULTY <select id="difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label><label>TOUCH CONTROL SIZE <input id="control-size" type="range" min=".7" max="1.3" step=".1" value="${save.settings.controlSize}"></label><label>CONTROL OPACITY <input id="control-opacity" type="range" min=".2" max="1" step=".05" value="${save.settings.controlOpacity}"></label><label>CONTROL INSET <input id="control-inset" type="range" min="0" max="60" step="5" value="${save.settings.controlInset}"></label><label>CONTROL LIFT <input id="control-lift" type="range" min="0" max="60" step="5" value="${save.settings.controlLift}"></label><label>COMPACT TOUCH LAYOUT <input id="compact-controls" type="checkbox" ${save.settings.compact ? "checked" : ""}></label><label>LEFT-HANDED TOUCH LAYOUT <input id="left-handed" type="checkbox" ${save.settings.leftHanded ? "checked" : ""}></label><label>HAPTICS (SUPPORTED DEVICES) <input id="vibration" type="checkbox" ${save.settings.vibration ? "checked" : ""}></label><label>REDUCED VISUAL EFFECTS <input id="reduced" type="checkbox" ${save.settings.reduced ? "checked" : ""}></label><label>MUTE ALL AUDIO <input id="mute" type="checkbox" ${save.settings.muted ? "checked" : ""}></label></div><div><h3>KEYBOARD · PLAYER 1</h3><p class="small">Select a key, then press its replacement.</p><div class="key-grid">${Object.keys(
+    `<div class="panel settings-panel">${chip("TUNE YOUR ARCADE")}<h2>OPTIONS</h2><div class="settings-grid"><div><label>MUSIC <input id="music" type="range" min="0" max="1" step=".05" value="${save.settings.music}"></label><label>SOUND EFFECTS <input id="effects" type="range" min="0" max="1" step=".05" value="${save.settings.effects}"></label><label>ANNOUNCER <input id="announcer" type="range" min="0" max="1" step=".05" value="${save.settings.announcer}"></label><label>OPTIONAL DEVICE VOICE <input id="speech-fallback" type="checkbox" ${save.settings.speechFallback ? "checked" : ""}></label><p class="small">Original robotic voice pack installed. Device voice is an optional fallback.</p><label>DIFFICULTY <select id="difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label><label>TOUCH CONTROL SIZE <input id="control-size" type="range" min=".7" max="1.3" step=".1" value="${save.settings.controlSize}"></label><label>CONTROL OPACITY <input id="control-opacity" type="range" min=".2" max="1" step=".05" value="${save.settings.controlOpacity}"></label><label>CONTROL INSET <input id="control-inset" type="range" min="0" max="60" step="5" value="${save.settings.controlInset}"></label><label>CONTROL LIFT <input id="control-lift" type="range" min="0" max="60" step="5" value="${save.settings.controlLift}"></label><label>COMPACT TOUCH LAYOUT <input id="compact-controls" type="checkbox" ${save.settings.compact ? "checked" : ""}></label><label>LEFT-HANDED TOUCH LAYOUT <input id="left-handed" type="checkbox" ${save.settings.leftHanded ? "checked" : ""}></label><label>HAPTICS (SUPPORTED DEVICES) <input id="vibration" type="checkbox" ${save.settings.vibration ? "checked" : ""}></label><label>REDUCED VISUAL EFFECTS <input id="reduced" type="checkbox" ${save.settings.reduced ? "checked" : ""}></label><label>MUTE ALL AUDIO <input id="mute" type="checkbox" ${save.settings.muted ? "checked" : ""}></label></div><div><h3>KEYBOARD · PLAYER 1</h3><p class="small">Select a key, then press its replacement.</p><div class="key-grid">${Object.keys(
       defaultKeys,
     )
       .map((k) =>
@@ -763,8 +783,118 @@ function settings() {
       )
       .join(
         "",
-      )}</div><p id="remap-message" class="small" role="status">P2 uses arrows + numpad. Gamepads map automatically.</p>${button("RESET KEY BINDINGS", "resetkeys", "text-btn")}</div></div><div class="panel-footer"><span>SAVED AUTOMATICALLY · NO PERSONAL DATA COLLECTED</span>${button("DONE →", "backsettings", "primary")}</div></div>`,
+      )}</div><p id="remap-message" class="small" role="status">P2 uses arrows + numpad. Gamepads map automatically.</p>${button("RESET KEY BINDINGS", "resetkeys", "text-btn")}</div></div><div class="panel-footer"><span>SAVED AUTOMATICALLY · NO PERSONAL DATA COLLECTED</span>${button("SAVE & RETURN →", "backsettings", "primary")}</div></div>`,
   );
+  const grid = $(".settings-grid"),
+    keyboard = grid.children[1];
+  const tabs = document.createElement("nav");
+  tabs.className = "options-tabs";
+  tabs.setAttribute("aria-label", "Options categories");
+  const groups = ["AUDIO", "CONTROLS", "GAMEPLAY"].map((name) => {
+    const panel = document.createElement("section");
+    panel.className = "option-page";
+    panel.dataset.group = name;
+    const tab = document.createElement("button");
+    tab.textContent = name;
+    tab.type = "button";
+    tab.onclick = () => {
+      groups.forEach((p) => (p.hidden = p !== panel));
+      tabs
+        .querySelectorAll("button")
+        .forEach((b) => b.setAttribute("aria-pressed", String(b === tab)));
+    };
+    tabs.append(tab);
+    return panel;
+  });
+  for (const label of [...grid.querySelectorAll("label")]) {
+    const id = label.querySelector("input,select")?.id || "";
+    groups[
+      ["music", "effects", "announcer", "mute", "speech-fallback"].includes(id)
+        ? 0
+        : ["difficulty", "reduced"].includes(id)
+          ? 2
+          : 1
+    ].append(label);
+  }
+  groups[1].append(keyboard);
+  groups[1].insertAdjacentHTML(
+    "beforeend",
+    `<details class="pad-settings"><summary>GAMEPAD COMBAT BUTTONS</summary>${Object.entries(
+      save.settings.padButtons,
+    )
+      .map(
+        ([action, value]) =>
+          `<label>PAD ${action === "special" ? "SP1 DASH" : action === "special2" ? "SP2 PROJECTILE" : action.toUpperCase()} <select data-pad="${action}">${["A / CROSS", "B / CIRCLE", "X / SQUARE", "Y / TRIANGLE", "LB / L1", "RB / R1"].map((label, index) => `<option value="${index}" ${value === index ? "selected" : ""}>${label}</option>`).join("")}</select></label>`,
+      )
+      .join(
+        "",
+      )}<p>Start pauses. Triggers: dash / heavy. Menu selection uses A / Cross.</p></details>`,
+  );
+  for (const select of groups[1].querySelectorAll<HTMLSelectElement>(
+    "[data-pad]",
+  ))
+    select.onchange = () => {
+      const key = select.dataset.pad!,
+        next = Number(select.value),
+        old = save.settings.padButtons[key];
+      const other = Object.keys(save.settings.padButtons).find(
+        (k) => k !== key && save.settings.padButtons[k] === next,
+      );
+      if (other) save.settings.padButtons[other] = old;
+      save.settings.padButtons[key] = next;
+      for (const el of overlay.querySelectorAll<HTMLSelectElement>(
+        "[data-pad]",
+      ))
+        el.value = String(save.settings.padButtons[el.dataset.pad!]);
+      applySettings();
+    };
+
+  const touchPage = document.createElement("div");
+  touchPage.className = "control-page";
+  for (const el of [...groups[1].children])
+    if (el.tagName === "LABEL") touchPage.append(el);
+  const padPage = groups[1].querySelector<HTMLDetailsElement>(".pad-settings")!;
+  padPage.open = true;
+  padPage.querySelector("summary")!.hidden = true;
+  const controlNav = document.createElement("nav");
+  controlNav.className = "control-tabs";
+  const controlPages = [touchPage, keyboard as HTMLElement, padPage];
+  for (const [i, title] of ["TOUCH", "KEYBOARD", "GAMEPAD"].entries()) {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.textContent = title;
+    tab.onclick = () => {
+      controlPages.forEach((p, n) => (p.hidden = n !== i));
+      controlNav
+        .querySelectorAll("button")
+        .forEach((b) => b.setAttribute("aria-pressed", String(b === tab)));
+    };
+    controlNav.append(tab);
+  }
+  groups[1].replaceChildren(controlNav, ...controlPages);
+  (controlNav.firstElementChild as HTMLButtonElement).click();
+  groups[2].insertAdjacentHTML(
+    "beforeend",
+    `<label>ROUND WINS <select id="round-count">${[1, 2, 3].map((n) => `<option value="${n}" ${save.settings.rounds === n ? "selected" : ""}>${n}</option>`).join("")}</select></label><label>ROUND TIMER <select id="round-timer">${[60, 75, 99].map((n) => `<option value="${n}" ${save.settings.timer === n ? "selected" : ""}>${n} SECONDS</option>`).join("")}</select></label><label>SCREEN SHAKE <input id="shake" type="checkbox" ${save.settings.shake ? "checked" : ""}></label><button type="button" id="options-fullscreen">FULLSCREEN</button>`,
+  );
+  grid.replaceChildren(...groups);
+  grid.before(tabs);
+  (tabs.firstElementChild as HTMLButtonElement).click();
+  $("#round-count").onchange = (e) => {
+    save.settings.rounds = Number((e.target as HTMLSelectElement).value);
+    applySettings();
+  };
+  $("#round-timer").onchange = (e) => {
+    save.settings.timer = Number((e.target as HTMLSelectElement).value);
+    applySettings();
+  };
+  $("#shake").onchange = (e) => {
+    save.settings.shake = (e.target as HTMLInputElement).checked;
+    applySettings();
+  };
+  $("#options-fullscreen").onclick = () => {
+    void fullscreen();
+  };
   for (const [id, key] of [
     ["compact-controls", "compact"],
     ["left-handed", "leftHanded"],
@@ -1135,12 +1265,17 @@ controls.onNavigate = (dir) => {
       "button:not([disabled]),select,input",
     ),
   ];
-  const active = items.indexOf(document.activeElement as HTMLButtonElement);
+  const visibleItems = items.filter((el) => el.getClientRects().length > 0);
+  const active = visibleItems.indexOf(
+    document.activeElement as HTMLButtonElement,
+  );
   if (dir === "select") (document.activeElement as HTMLElement)?.click();
   else
-    items[
-      (active + (dir === "up" || dir === "left" ? -1 : 1) + items.length) %
-        items.length
+    visibleItems[
+      (active +
+        (dir === "up" || dir === "left" ? -1 : 1) +
+        visibleItems.length) %
+        visibleItems.length
     ]?.focus();
 };
 window.addEventListener("keydown", (e) => {

@@ -84,7 +84,7 @@ it("throws whiff out of range and a defender can break a fresh hold", () => {
   step(m, [{}, { grab: true }]);
   expect(m.throwSequence).toBeNull();
   expect(m.events.some((e) => e.type === "throwBreak")).toBe(true);
-  expect(m.fighters[1].health).toBe(118);
+  expect(m.fighters[1].health).toBe(fighterById("nash").health);
 });
 it("away walks outside a threat; low and overhead guards obey directional rules", () => {
   const m = ready();
@@ -98,7 +98,9 @@ it("away walks outside a threat; low and overhead guards obey directional rules"
   ] as const) {
     const x = ready();
     for (let n = 0; n < 35; n++) step(x, [attack, guard]);
-    expect(x.fighters[1].health === 117).toBe(blocked);
+    expect(x.fighters[1].health === fighterById("nash").health - 1).toBe(
+      blocked,
+    );
   }
 });
 
@@ -179,10 +181,10 @@ it("migrates old Frost progress and preserves old scores without granting unearn
 it("Santa phases change readable projectile patterns and playable Santa has no boss phases", () => {
   const m = createMatch("jamie", "santa", false, "boss");
   m.phase = "fight";
-  m.fighters[1].health = 90;
+  m.fighters[1].health = fighterById("santa", "boss").health * 0.6;
   step(m, [{}, {}]);
   expect(m.fighters[1].bossPhase).toBe(1);
-  m.fighters[1].health = 40;
+  m.fighters[1].health = fighterById("santa", "boss").health * 0.25;
   step(m, [{}, {}]);
   expect(m.fighters[1].bossPhase).toBe(2);
   expect(getMove("santa", "special", "boss", 0).bursts).toBe(1);
@@ -234,7 +236,7 @@ it("mid attacks can be guarded low, while an armoured boss charge can still be p
   m.fighters[1].previous = { right: true, down: true };
   for (let n = 0; n < 16; n++)
     step(m, [{ punch: true }, { right: true, down: true }]);
-  expect(m.fighters[1].health).toBe(117);
+  expect(m.fighters[1].health).toBe(fighterById("nash").health - 1);
   for (const [frame, reaction] of [
     [4, "attack"],
     [11, "hitstun"],
@@ -251,7 +253,7 @@ it("mid attacks can be guarded low, while an armoured boss charge can still be p
     b.move = "special2";
     b.frame = frame;
     step(x, [{}, {}]);
-    expect(b.health).toBeLessThan(136);
+    expect(b.health).toBeLessThan(fighterById("rob", "boss").health);
     expect(b.state).toBe(reaction);
   }
 });
@@ -263,7 +265,7 @@ it("throws remain inside corners and an airborne opponent is ineligible", () => 
     step(m, [{ grab: n < 8 }, {}]);
     expect(m.fighters.every((f) => f.x >= 45 && f.x <= 755)).toBe(true);
   }
-  expect(m.fighters[1].health).toBeLessThan(118);
+  expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health);
   const air = ready();
   air.fighters[1].y = 200;
   air.fighters[1].vy = -3;
