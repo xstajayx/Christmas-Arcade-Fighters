@@ -71,7 +71,30 @@ for (const clip of voiceManifest.clips) {
     `Invalid announcer WAV ${clip.id}`,
   );
   assert(wave.length > 2000, `Empty announcer clip ${clip.id}`);
+  assert(
+    existsSync(resolve(root, "voices", clip.compressed)),
+    `Missing compressed voice ${clip.id}`,
+  );
 }
+const audioManifest = JSON.parse(
+  readFileSync(resolve(root, "audio/manifest.json"), "utf8"),
+);
+assert.equal(
+  audioManifest.stageTracks.length,
+  8,
+  "Stage music mapping incomplete",
+);
+for (const track of audioManifest.tracks)
+  for (const file of track.files) {
+    const bytes = readFileSync(resolve(root, "audio", file));
+    assert(bytes.length > 10000, `Empty score ${track.id}`);
+    if (file.endsWith(".ogg"))
+      assert.equal(bytes.toString("ascii", 0, 4), "OggS");
+    assert(
+      !worker.includes(`./audio/${file}`),
+      "Stage music must remain lazy-loaded",
+    );
+  }
 console.log(
   `Verified release ${id}: compiled HTML, JS/CSS, versioned worker, eight arenas, base/action/walk/signature atlases and ${voiceManifest.clips.length} announcer clips.`,
 );

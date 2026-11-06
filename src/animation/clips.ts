@@ -69,8 +69,10 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
     speed = 7;
   }
   if (f.state === "recovery") {
-    sequence = clips.rise;
-    speed = 2;
+    // Throws/throw breaks recover while standing (stun > 0). Only a completed
+    // knockdown enters this state with zero stun and needs the get-up sequence.
+    sequence = f.stun > 0 ? [13, 0] : clips.rise;
+    speed = f.stun > 0 ? 4 : 2;
   }
   if (f.state === "victory") {
     sequence =
@@ -93,7 +95,8 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
       ? [26, 14, 27, 13][Math.min(3, Math.floor(f.frame / 7))]
       : [26, 38, 38, 39][Math.min(3, Math.floor(f.frame / 7))];
   }
-  if (f.state === "thrown") return f.frame < 8 ? 22 : f.frame < 18 ? 7 : 29;
+  // Braced contact -> recoil joins fall[0] at release without jump/seated torso snaps.
+  if (f.state === "thrown") return f.frame < 8 ? 22 : 23;
   if (f.state === "defeat") {
     sequence = clips.defeat;
     speed = 9;

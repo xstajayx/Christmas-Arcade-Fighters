@@ -93,7 +93,29 @@ export function isolateFrame(
     },
     pivot: { x: anchorX + dx, y: b.bottom + dy },
     offset: { x: dx, y: dy },
+    contacts: groundContacts(pixels, b.bottom + dy),
   };
+}
+
+// Locate opaque sole/contact pixels rather than putting a shadow under the hips.
+export function groundContacts(pixels: Uint8ClampedArray, bottom: number) {
+  const runs: { x: number; width: number }[] = [];
+  let start = -1;
+  for (let x = 0; x <= 256; x++) {
+    let solid = false;
+    if (x < 256)
+      for (let y = Math.max(0, bottom - 4); y <= bottom; y++)
+        solid ||= pixels[(y * 256 + x) * 4 + 3] >= 128;
+    if (solid && start < 0) start = x;
+    if (!solid && start >= 0) {
+      if (x - start >= 3) runs.push({ x: (start + x) / 2, width: x - start });
+      start = -1;
+    }
+  }
+  return runs
+    .sort((a, b) => b.width - a.width)
+    .slice(0, 2)
+    .sort((a, b) => a.x - b.x);
 }
 
 // Source-cell coordinates, before runtime packing offsets.

@@ -1,4 +1,4 @@
-import { giftFrame } from "../art/stages";
+import { giftFrame, stageLayout } from "../art/stages";
 import { activeSuper as superPresentation } from "../combat/presentation";
 import Phaser from "phaser";
 import { createArt } from "../art/pixel";
@@ -36,7 +36,7 @@ interface Particle {
 }
 export class Arena extends Phaser.Scene {
   private sprites: Phaser.GameObjects.Sprite[] = [];
-  private shadows: Phaser.GameObjects.Ellipse[] = [];
+  private shadows: Phaser.GameObjects.Ellipse[][] = [];
   private layers: Phaser.GameObjects.Image[] = [];
   private flakes: Phaser.GameObjects.Rectangle[] = [];
   private particles: Particle[] = [];
@@ -178,7 +178,9 @@ export class Arena extends Phaser.Scene {
     createArt(this, (n) => this.bridge.progress(70 + n * 0.3));
     for (let i = 0; i < 3; i++)
       this.layers.push(
-        this.add.image(400, 225, `stage-0-${i}`).setDisplaySize(1020, 580),
+        this.add
+          .image(400, stageLayout.y, `stage-0-${i}`)
+          .setDisplaySize(stageLayout.width, stageLayout.height),
       );
     for (let i = 0; i < 7; i++) {
       this.gifts.push(
@@ -195,7 +197,13 @@ export class Arena extends Phaser.Scene {
       );
     }
     for (let i = 0; i < 2; i++) {
-      this.shadows.push(this.add.ellipse(0, 350, 78, 10, 0x071424, 0.55));
+      this.shadows.push(
+        [0, 1].map(() =>
+          this.add
+            .ellipse(0, stageLayout.floor, 32, 7, 0x081326, 0.58)
+            .setDepth(4),
+        ),
+      );
       this.sprites.push(
         this.add
           .sprite(0, 350, i ? "bucket" : "jamie")
@@ -458,7 +466,10 @@ export class Arena extends Phaser.Scene {
         .setDepth(5 + f.y / 1000 + f.x / 100000);
       const metadata = (
         spr.texture.customData as {
-          frames?: { pivot: { x: number; y: number } }[];
+          frames?: {
+            pivot: { x: number; y: number };
+            contacts: { x: number; width: number }[];
+          }[];
         }
       ).frames?.[Math.min(frame, spr.texture.frameTotal - 2)];
       if (metadata)
@@ -470,9 +481,23 @@ export class Arena extends Phaser.Scene {
       else if (f.state === "hitstun" && !this.bridge.reduced)
         spr.setTint(0xffb2a2);
       else spr.clearTint();
-      this.shadows[i]
-        .setPosition(f.x, 350)
-        .setScale(Math.max(0.4, 1 - (300 - f.y) / 200));
+      const height = Math.max(0, stageLayout.floor - spr.y);
+      this.shadows[i].forEach((shadow, index) => {
+        const contact = metadata?.contacts[index];
+        shadow.visible = !!contact;
+        if (contact && metadata)
+          shadow
+            .setPosition(
+              spr.x +
+                (contact.x - metadata.pivot.x) * (f.facing < 0 ? -0.75 : 0.75),
+              stageLayout.floor + 1,
+            )
+            .setDisplaySize(
+              Math.max(14, contact.width * 0.75 + 8 + height * 0.08),
+              6 + height * 0.015,
+            )
+            .setAlpha(Math.max(0.16, 0.58 - height / 300));
+      });
     });
     this.flakes.forEach((f, i) => {
       f.visible = !this.bridge.reduced;
@@ -749,7 +774,12 @@ export class Arena extends Phaser.Scene {
         .lineStyle(this.bridge.reduced ? 1 : 3, color, 0.65)
         .strokeEllipse(f.x, f.y - 40, 110, 180);
       this.layers.forEach((l) => l.setTint(0x9da8bb));
-    } else this.layers.forEach((l) => l.clearTint());
+    } else
+      this.layers.forEach((l) => {
+        if (this.stageId === 0 && this.bridge.combatVisible !== false)
+          l.setTint(0xc2cbd6);
+        else l.clearTint();
+      });
     const target = m
       ? targetFraming(
           m.fighters,

@@ -7,6 +7,7 @@ import {
   fighters,
   roster,
   fighterById,
+  getMove,
   type FighterId,
   signatures,
   endings,
@@ -14,6 +15,7 @@ import {
 import { createMatch, step, type Match } from "./combat/engine";
 import { CPU, type Dummy } from "./ai/cpu";
 import { Sound } from "./audio/sound";
+import { stageMusic } from "./audio/music";
 import { Controls } from "./ui/input";
 import { requestGameFullscreen } from "./ui/fullscreen";
 import {
@@ -73,6 +75,7 @@ let screen: Screen = "loading",
   dummy: Dummy = "stand",
   cpu = new CPU(save.settings.difficulty),
   lastPhase = "",
+  lastAudioCombo = 0,
   stats = { hits: 0, damage: 0 },
   remapping: string | null = null,
   completed = false;
@@ -170,6 +173,17 @@ function chip(text: string) {
   return `<span class="eyebrow">${text}</span>`;
 }
 function setScreen(s: Screen, html: string) {
+  if (screen !== s) {
+    sound.enterScene();
+    const keepStageMusic =
+      s === "pause" ||
+      (s === "settings" && (screen === "match" || screen === "pause"));
+    if (
+      !["match", "results", "ending", "gameover"].includes(s) &&
+      !keepStageMusic
+    )
+      sound.setTrack("menu");
+  }
   if (continueClock) {
     clearInterval(continueClock);
     continueClock = null;
@@ -218,6 +232,11 @@ function showMenu() {
         "",
       )}</nav><div class="v3-utility">${button("FULLSCREEN", "fullscreen", "secondary")}${button("MORE MODES", "more", "secondary")}${button("HOW TO PLAY", "how", "text-btn")}<small>CHRISTMAS TOURNAMENT · V3.3</small></div><p id="fullscreen-status" role="status"></p></div>`,
   );
+  if (sound.state === "running")
+    void sound.announce(
+      "christmas-arcade-fighters",
+      "Christmas Arcade Fighters!",
+    );
 }
 function moreModes(versusOnly = false) {
   setScreen(
@@ -287,8 +306,7 @@ setInterval(() => {
     });
 }, 450);
 function select() {
-  if (screen !== "select")
-    void sound.announce("choose-your-fighter", "Choose your fighter!");
+  const announceSelection = screen !== "select";
   setScreen(
     "select",
     `<div class="panel select-panel">${chip(mode === "versus" ? "LOCAL RIVALRY" : "MEET THE NAUGHTY LIST")}<h2>CHOOSE YOUR FIGHTER.</h2><div class="fighters-grid">${roster.map((f) => `<button class="fighter-card ${f.id === chosen ? "selected" : ""} ${save.unlocked.includes(f.id) ? "" : "locked"}" ${save.unlocked.includes(f.id) ? "" : "disabled"} style="--fighter:${"#" + f.color.toString(16)}" data-action="pick-${f.id}" aria-pressed="${f.id === chosen}"><span class="fighter-number">0${roster.indexOf(f) + 1}</span><img data-fighter="${f.id}" data-portrait="close" src="${portrait(f.id, 0, true)}" alt="Pixel portrait of ${f.name}"><strong class="fighter-name">${f.name}</strong><small>${save.unlocked.includes(f.id) ? f.title : `DEFEAT ${f.id === "rob" ? "ROB FATHER · LV 8" : "SANTA · LV 10"}`}</small><span class="select-marker">${!save.unlocked.includes(f.id) ? "LOCKED" : f.id === chosen ? "PLAYER 1" : "SELECT"}</span></button>`).join("")}</div><div class="fighter-detail"><div><h3>${chosen.toUpperCase()} <span>${fighterById(chosen).special}</span></h3><p>${fighterById(chosen).bio}</p></div><div class="fighter-stats">${["POWER", "SPEED", "DEFENCE"].map((label, i) => `<span>${label} <b>${"▰".repeat(fighterById(chosen).stats[i])}<i>${"▱".repeat(5 - fighterById(chosen).stats[i])}</i></b></span>`).join("")}</div></div><div class="panel-footer">${button("← MODES", "menu", "text-btn")}${
@@ -303,6 +321,8 @@ function select() {
             .join("")}</select></label>`
     }${mode === "cpu" ? `<label>DIFFICULTY <select id="cpu-difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option value="${d}" ${save.settings.difficulty === d ? "selected" : ""}>${d === "master" ? "ARCADE MASTER" : d}</option>`).join("")}</select></label>` : ""}${button("CHOOSE STAGE →", "stages", "primary")}</div>${mode === "versus" ? '<p class="versus-note">P1: WASD + J/K/I/U · P2: arrows + numpad 1/2/5/0. Hold away to guard. Two gamepads also supported. A numpad or second gamepad is required for independent P2 attacks.</p>' : ""}</div>`,
   );
+  if (announceSelection)
+    void sound.announce("choose-your-fighter", "Choose your fighter!");
   if (mode === "arcade" || mode === "survival")
     $("#select-difficulty").onchange = (e) => {
       save.settings.difficulty = (e.target as HTMLSelectElement)
@@ -460,29 +480,9 @@ function begin() {
   roundAnnounced = 0;
   lastUnlock = null;
   maxCombo = 0;
-  sound.setTrack(
-    opponent === "santa"
-      ? "santa"
-      : opponent === "rob"
-        ? "rob"
-        : opponent === "frost"
-          ? "boss"
-          : ([
-              "village",
-              "pier",
-              "workshop",
-              "forest",
-              "rooftops",
-              "fortress",
-              "rob",
-              "santa",
-            ][stage] as Parameters<Sound["setTrack"]>[0]),
-  );
-  if (opponent === "frost" || match.fighters[1].profile === "boss")
-    void sound.announce(
-      opponent === "santa" ? "final-battle" : "boss-battle",
-      opponent === "santa" ? "Final battle!" : "Boss battle!",
-    );
+  lastAudioCombo = 0;
+  sound.setTrack(stageMusic(stage, opponent));
+  sound.resume();
   bridge.match = match;
   bridge.stage = stage;
   paused = false;
@@ -491,9 +491,17 @@ function begin() {
   stats = { hits: 0, damage: 0 };
   setScreen("match", "");
   buildHud();
+  if (opponent === "frost" || match.fighters[1].profile === "boss") {
+    sound.play("bossIntro");
+    void sound.announce(
+      opponent === "santa" ? "final-battle" : "boss-battle",
+      "Boss battle!",
+    );
+    void sound.announce(opponent, fighterById(opponent).name);
+  }
 }
 function buildHud() {
-  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><div class="name-line"><b>${fighterById(chosen).name}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><div class="name-line"><b>${fighterById(opponent).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><button id="fullscreen-game" aria-label="Fullscreen game">⛶</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1">${fighterById(chosen).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2">${fighterById(opponent).special.toUpperCase()}</span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? '<div class="training-bar"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span><label><input type="checkbox" id="show-hitboxes"> HITBOXES</label><button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button><button id="inspect-sprites">SPRITE INSPECTOR</button></div>' : ""}`;
+  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><div class="name-line"><b id="fighter-name-p1">${fighterById(match!.fighters[0].id).name}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><div class="name-line"><b id="fighter-name-p2">${fighterById(match!.fighters[1].id).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><button id="fullscreen-game" aria-label="Fullscreen game">⛶</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1"></span><span class="special-moves" id="moves-p1"></span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2"></span><span class="special-moves" id="moves-p2"></span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? '<div class="training-bar"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span><label><input type="checkbox" id="show-hitboxes"> HITBOXES</label><button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button><button id="inspect-sprites">SPRITE INSPECTOR</button></div>' : ""}`;
   $("#pause-button").onclick = () => pause();
   $("#fullscreen-game").onclick = () => {
     void fullscreen();
@@ -584,14 +592,26 @@ function renderHud() {
       f.health < f.maxHealth * 0.25,
     );
     $(`#meter-${id}`).style.width = f.meter + "%";
-    $(`#special-${id}`).classList.toggle("ready", f.meter >= 40);
-    $(`#special-${id}`).textContent =
-      f.meter >= 40
-        ? `SPECIAL READY · ${Math.floor(f.meter)}%`
-        : `SPECIAL · ${Math.floor(f.meter)}%`;
+    const sp1 = getMove(f.id, "special", f.profile, f.bossPhase),
+      sp2 = getMove(f.id, "special2", f.profile, f.bossPhase);
+    $(`#fighter-name-${id}`).textContent = fighterById(f.id, f.profile).name;
+    $(`#special-${id}`).classList.toggle(
+      "ready",
+      f.meter >= Math.min(sp1.cost, sp2.cost),
+    );
+    html(
+      $(`#special-${id}`),
+      `<span class="special-kind">SPECIAL${f.meter >= Math.min(sp1.cost, sp2.cost) ? " READY" : ""}</span> <b>${Math.floor(f.meter)}%</b>`,
+    );
+    html(
+      $(`#moves-${id}`),
+      `<span class="${f.move === "special2" ? "" : "active"}">SP1 ${sp1.name}</span><span class="${f.move === "special2" ? "active" : ""}">SP2 ${sp2.name}</span>`,
+    );
     const ready = f.superMeter >= 100;
-    if (ready && !$(`#super-${id}`).classList.contains("charged"))
+    if (ready && !$(`#super-${id}`).classList.contains("charged")) {
       sound.play("ready");
+      if (i === 0) void sound.announce("super-ready", "Super ready!");
+    }
     $(`#super-${id}`).classList.toggle("charged", ready);
     $(`#super-${id}`).style.setProperty("--charge", `${f.superMeter}%`);
     $(`#score-${id}`).textContent = String(f.score).padStart(6, "0");
@@ -633,8 +653,20 @@ function renderHud() {
       `${stats.hits} HITS · ${stats.damage} DAMAGE · BEST ${maxCombo}`;
   for (let i = 0; i < 2; i++) {
     const f = m.fighters[i];
-    $(`#super-p${i + 1}`).textContent =
-      `${f.superMeter >= 100 ? "SUPER READY" : signatures[f.id][3].toUpperCase()} ${Math.floor(f.superMeter)}%`;
+    const superName = getMove(
+      f.id,
+      "super",
+      f.profile,
+      f.bossPhase,
+    ).name!.toUpperCase();
+    html(
+      $(`#super-p${i + 1}`),
+      `${f.superMeter >= 100 ? "SUPER READY" : "SUPER"}<em class="super-name">${f.superMeter >= 100 ? "" : " · " + superName}</em> · <b>${Math.floor(f.superMeter)}%</b>`,
+    );
+    $(`#super-p${i + 1}`).setAttribute(
+      "aria-label",
+      `${fighterById(f.id).name}: ${superName}, Super ${Math.floor(f.superMeter)}%`,
+    );
     $(`#super-p${i + 1}`).classList.toggle("ready", f.superMeter >= 100);
   }
   if (tutorialActive) {
@@ -689,19 +721,22 @@ function tick(delta: number) {
       ev.move,
       match.fighters[ev.player || 0].id,
     );
-    if (ev.type === "super") {
-      const signature = signatures[match.fighters[ev.player || 0].id][3];
-      void sound.announce(
-        signature.toLowerCase().replace(/[’']/g, "").replaceAll(" ", "-"),
-        signature,
+    if (ev.type === "super") void sound.announce("super", "Super attack!");
+    if (ev.type === "special")
+      void sound.announce("special-attack", "Special attack!");
+    if (["hit", "counter", "block"].includes(ev.type) && ev.move === "special2")
+      sound.play(
+        "projectileImpact",
+        ev.strength,
+        ev.move,
+        match.fighters[ev.player || 0].id,
       );
-    }
     if (ev.type === "counter") void sound.announce("counter", "Counter!");
     if (ev.type === "bossPhase") {
       const boss = match.fighters[ev.player || 1];
       if (boss.id === "santa" && boss.bossPhase === 2)
         sound.setTrack("santaFinal");
-      void sound.announce(boss.id, "Boss phase!");
+      sound.setIntensity(boss.bossPhase);
     }
     if (ev.type === "fight") void sound.announce("fight", "Fight!");
     if (ev.type === "ko") void sound.announce("knockout", "Knockout!");
@@ -723,12 +758,16 @@ function tick(delta: number) {
         tutorialStep++;
     }
     if ((ev.type === "hit" || ev.type === "counter") && ev.player === 0) {
-      if (match.fighters[0].combo === 3 && maxCombo < 3)
-        void sound.announce("combo", "Combo!");
       stats.hits++;
       stats.damage += ev.damage || 0;
     }
   }
+  const audioCombo = match.fighters[0].combo;
+  if (audioCombo >= 5 && lastAudioCombo < 5)
+    void sound.announce("five-hit-combo", "Five hit combo!");
+  else if (audioCombo >= 3 && lastAudioCombo < 3)
+    void sound.announce("combo", "Combo!");
+  lastAudioCombo = audioCombo;
   maxCombo = Math.max(maxCombo, match.fighters[0].combo);
   if (
     tutorialActive &&
@@ -989,6 +1028,7 @@ function endRun(result: "champion" | "defeat") {
 }
 function results() {
   if (!match) return;
+  const announceResult = !completed;
   const win = match.winner === 0,
     winner: FighterId | "draw" =
       match.winner === null || match.winner === "draw"
@@ -1036,12 +1076,6 @@ function results() {
       });
     persist(save);
     completed = true;
-    const perfect =
-      win && match.fighters[0].health === fighterById(chosen).health;
-    void sound.announce(
-      perfect ? "perfect" : win ? "you-win" : "you-lose",
-      perfect ? "Perfect!" : win ? "You win!" : "You lose!",
-    );
   }
   const circuit = mode === "arcade" || mode === "survival";
   const title =
@@ -1055,14 +1089,26 @@ function results() {
     continueClock = setInterval(() => {
       if (screen !== "results") return;
       continueRemaining--;
+      if (continueRemaining <= 10) sound.play("countdown");
       const clock = document.querySelector("#continue-clock");
       if (clock) clock.textContent = String(continueRemaining);
       if (continueRemaining <= 0) gameOver();
     }, 1000);
   }
+  sound.setTrack(win ? "victory" : "defeat");
+  if (announceResult) {
+    if (lastUnlock) sound.play("unlock");
+    if (win && match.fighters[0].health === fighterById(chosen).health)
+      void sound.announce("perfect", "Perfect!");
+    void sound.announce(
+      win ? "you-win" : "you-lose",
+      win ? "You win!" : "You lose!",
+    );
+  }
 }
 function gameOver() {
   endRun("defeat");
+  sound.setTrack("defeat");
   setScreen(
     "gameover",
     `<div class="panel compact">${chip("THE LONGEST NIGHT")}<h2>GAME OVER.</h2><p>Your run is saved in the local leaderboard. The village still believes in you.</p>${button("TRY A NEW RUN →", "newrun", "primary")}${button("HIGH SCORES", "scores", "secondary")}${button("BACK TO MENU", "quit", "text-btn")}</div>`,
@@ -1071,13 +1117,13 @@ function gameOver() {
 function ending() {
   endRun("champion");
   sound.setTrack("ending");
-  void sound.announce(
-    "congratulations",
-    "Congratulations. Christmas champion.",
-  );
   setScreen(
     "ending",
     `<div class="panel compact result-panel">${chip("SANTA HAS BEEN DEFEATED")}<span class="result-star">★</span><h2>CHRISTMAS ARCADE CHAMPION.</h2><p>${endings[chosen]}</p><p>Ten challenges. The Rob Father and Santa unlocked. One well-earned Christmas feast.</p><p class="small">SCORE ${campaign?.score || 0} · ARCADE CLEARS ${save.arcadeWins}</p>${button("HIGH SCORES →", "scores", "primary")}${button("ONE MORE CHRISTMAS →", "newrun", "secondary")}${button("CREDITS", "credits", "text-btn")}</div>`,
+  );
+  void sound.announce(
+    "christmas-arcade-champion",
+    "Christmas Arcade Champion!",
   );
 }
 function highScores() {
@@ -1098,8 +1144,16 @@ overlay.addEventListener("click", (e) => {
   );
   if (!b) return;
   sound.unlock();
-  sound.play("menu");
   const a = b.dataset.action!;
+  queueMicrotask(() =>
+    sound.play(
+      a.startsWith("pick-")
+        ? "select"
+        : /^(menu|quit|title|back)/.test(a)
+          ? "cancel"
+          : "confirm",
+    ),
+  );
   if (a.startsWith("pick-")) {
     if (!save.unlocked.includes(a.slice(5))) return;
     chosen = a.slice(5) as FighterId;
@@ -1220,10 +1274,11 @@ overlay.addEventListener("click", (e) => {
     },
     rematch: begin,
     next: () => {
-      if (!campaign?.completed)
-        void sound.announce("new-challenger", "New challenger!");
       if (campaign?.completed) ending();
-      else begin();
+      else {
+        begin();
+        void sound.announce("new-challenger", "New challenger!");
+      }
     },
     ending,
     resetkeys: () => {
@@ -1246,6 +1301,10 @@ controls.onPause = () => {
 };
 controls.onNavigate = (dir) => {
   if (screen === "match") return;
+  if (dir !== "select") {
+    sound.unlock();
+    sound.play("menu");
+  }
   const focused = document.activeElement;
   if (
     focused instanceof HTMLSelectElement &&
@@ -1364,6 +1423,13 @@ document.addEventListener("visibilitychange", () => {
     sound.suspend();
   }
 });
+window.addEventListener("focus", () => {
+  if (screen !== "pause" && !(screen === "settings" && paused)) sound.resume();
+});
+window.addEventListener("pagehide", (event) => {
+  if (event.persisted) sound.suspend();
+  else sound.dispose();
+});
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   const hadController = !!navigator.serviceWorker.controller;
   let refreshing = false;
@@ -1395,6 +1461,7 @@ Object.defineProperty(window, "__CAF__", {
         [0, 1, 2].every((layer) => game.textures.exists(`stage-${i}-${layer}`)),
       ),
       audio: sound.state,
+      audioMix: sound.diagnostics,
     },
     screen,
     mode,

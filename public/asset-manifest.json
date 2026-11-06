@@ -8,32 +8,16 @@
   ],
   "provenance": "Original assets generated for this project from the supplied Christmas reference; no commercial game sprites used",
   "fighters": {
-    "ids": [
-      "jamie",
-      "nash",
-      "bucket",
-      "beardy",
-      "rob",
-      "santa"
-    ],
+    "ids": ["jamie", "nash", "bucket", "beardy", "rob", "santa"],
     "boss": "frost",
     "frameWidth": 256,
     "frameHeight": 256,
-    "sourceGrid": [
-      8,
-      4
-    ],
+    "sourceGrid": [8, 4],
     "sourceFrameCount": 32,
-    "runtimeGrid": [
-      8,
-      6
-    ],
+    "runtimeGrid": [8, 6],
     "runtimeFrameCount": 48,
     "bossFrameCount": 32,
-    "pivot": [
-      0.5,
-      0.953125
-    ],
+    "pivot": [0.5, 0.953125],
     "scale": 0.75,
     "faces": "right",
     "transparent": true,
@@ -48,12 +32,7 @@
     ],
     "supplement": {
       "file": "atlases/actions.webp",
-      "rows": [
-        "jamie",
-        "nash",
-        "bucket",
-        "beardy"
-      ],
+      "rows": ["jamie", "nash", "bucket", "beardy"],
       "columns": [
         "low anticipation",
         "low contact",
@@ -65,16 +44,7 @@
         "throw release"
       ],
       "baselineCorrectionY": 0,
-      "runtimeFrames": [
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39
-      ]
+      "runtimeFrames": [32, 33, 34, 35, 36, 37, 38, 39]
     },
     "frames": [
       "idle",
@@ -116,26 +86,9 @@
     "failure": "Required-art errors stop boot with a retry screen; no rectangle fighter fallback",
     "walk": {
       "file": "atlases/walk.webp",
-      "rows": [
-        "jamie",
-        "nash",
-        "bucket",
-        "beardy"
-      ],
-      "grid": [
-        8,
-        4
-      ],
-      "runtimeFrames": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47
-      ]
+      "rows": ["jamie", "nash", "bucket", "beardy"],
+      "grid": [8, 4],
+      "runtimeFrames": [40, 41, 42, 43, 44, 45, 46, 47]
     },
     "signatures": {
       "files": [
@@ -147,20 +100,9 @@
         "atlases/special-rob.webp",
         "atlases/special-santa.webp"
       ],
-      "frameSize": [
-        256,
-        256
-      ],
-      "grid": [
-        6,
-        4
-      ],
-      "rows": [
-        "special",
-        "special2",
-        "special3",
-        "super"
-      ],
+      "frameSize": [256, 256],
+      "grid": [6, 4],
+      "rows": ["special", "special2", "special3", "super"],
       "phases": [
         "anticipation",
         "windup",
@@ -169,25 +111,12 @@
         "recoil",
         "recovery"
       ],
-      "pivot": [
-        0.5,
-        0.953125
-      ],
-      "sourcePivot": [
-        0.41015625,
-        0.953125
-      ],
-      "runtimeGrid": [
-        8,
-        3
-      ]
+      "pivot": [0.5, 0.953125],
+      "sourcePivot": [0.41015625, 0.953125],
+      "runtimeGrid": [8, 3]
     },
     "sourceFrameWidth": 192,
-    "bosses": [
-      "frost",
-      "rob",
-      "santa"
-    ],
+    "bosses": ["frost", "rob", "santa"],
     "playableUnlocks": {
       "rob": {
         "level": 8,
@@ -201,23 +130,14 @@
       }
     },
     "normalization": {
-      "cell": [
-        256,
-        256
-      ],
-      "defaultFeet": [
-        128,
-        244
-      ],
+      "cell": [256, 256],
+      "defaultFeet": [128, 244],
       "metadata": "Phaser Texture.customData.frames; explicit offset/pivot for wide or tall poses",
       "mirroring": "complement horizontal pivot",
       "extraction": "exact source cells; connected body plus edge fringe; no cross-row sampling",
       "collision": "independent world-space hit/hurt/push boxes"
     },
-    "bossRuntimeGrid": [
-      8,
-      4
-    ]
+    "bossRuntimeGrid": [8, 4]
   },
   "stages": {
     "ids": [
@@ -231,23 +151,10 @@
       "santas-throne"
     ],
     "atlas": "stages/arenas.webp",
-    "sourceSize": [
-      1536,
-      1024
-    ],
-    "grid": [
-      2,
-      3
-    ],
-    "runtimeSize": [
-      800,
-      450
-    ],
-    "layers": [
-      "background band",
-      "midground band",
-      "separate ground strip"
-    ],
+    "sourceSize": [1536, 1024],
+    "grid": [2, 3],
+    "runtimeSize": [800, 450],
+    "layers": ["background band", "midground band", "separate ground strip"],
     "animated": [
       "snow",
       "parallax planes",
@@ -266,37 +173,25 @@
     "qualityGate": "Backplates are illustrated; bands are not fully hand-separated object depth masks. Additional foreground/object animation remains an art-production gate.",
     "additionalAtlas": {
       "file": "stages/v3-arenas.webp",
-      "grid": [
-        1,
-        2
-      ],
-      "sourceSize": [
-        1536,
-        1024
-      ]
+      "grid": [1, 2],
+      "sourceSize": [1536, 1024]
     }
   },
   "audio": {
     "manifest": "voices/manifest.json",
     "voiceGenerator": "eSpeak NG Emscripten, development only, plus FFmpeg",
-    "voiceQuality": "31 integrated robotic fallback WAVs; professional projected performance and listening approval remain open",
-    "music": "Twelve original procedural themes including Rob Father, Santa and final phase",
-    "effects": "Distinct normals, guards, counters, character/variant specials and Supers",
-    "pipeline": "npm run voices:generate",
+    "voiceQuality": "36 integrated processed robotic fallback clips (MP3/WAV); professional voice recordings remain missing",
+    "missingProfessionalVoices": "voices/production-needed.json",
+    "music": "13 original rendered 16-bar scores in MP3/Ogg; eight stage IDs, menu, victory, defeat, ending and Santa final phase",
+    "musicManifest": "audio/manifest.json",
+    "effects": "Layered, varied impacts, launches, boss gifts, throws, Supers and interface cues; separate buses with limiting and announcer ducking",
+    "pipeline": "npm run voices:generate; npm run music:generate",
     "fallback": "Optional device speech, disabled by default and explicitly labelled"
   },
   "camera": {
     "startZoom": 1.25,
-    "zoomRange": [
-      0.82,
-      1.28
-    ],
-    "worldBounds": [
-      -90,
-      890,
-      -60,
-      500
-    ],
+    "zoomRange": [0.82, 1.28],
+    "worldBounds": [-90, 890, -60, 500],
     "hud": "fixed DOM, independent of world zoom",
     "debug": "training sprite inspector and camera viewport overlay",
     "koMaxZoom": 1.32
@@ -304,10 +199,7 @@
   "bossProjectiles": {
     "runtime": "atlases/festive-gifts.webp",
     "source": "assets/source/festive-gifts.png",
-    "cell": [
-      64,
-      64
-    ],
+    "cell": [64, 64],
     "columns": 8,
     "rows": [
       "Rob flight",

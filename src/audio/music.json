@@ -1,0 +1,106 @@
+{
+  "menu": {
+    "title": "North Star Tournament",
+    "bpm": 132,
+    "root": 60,
+    "minor": false,
+    "style": "anthem",
+    "motif": [12, 16, 19, 24, 23, 19, 16, 14, 12, 19, 21, 24, 19, 16, 14, 11]
+  },
+  "village": {
+    "title": "Lanterns in the Snow",
+    "bpm": 144,
+    "root": 60,
+    "minor": false,
+    "style": "bells",
+    "motif": [12, 16, 19, 16, 24, 23, 21, 19, 16, 19, 21, 24, 26, 23, 19, 14]
+  },
+  "pier": {
+    "title": "Winter Carnival Rush",
+    "bpm": 164,
+    "root": 62,
+    "minor": false,
+    "style": "carnival",
+    "motif": [12, 19, 16, 21, 19, 24, 23, 19, 16, 14, 16, 19, 21, 19, 14, 11]
+  },
+  "workshop": {
+    "title": "Clockwork Christmas",
+    "bpm": 152,
+    "root": 64,
+    "minor": false,
+    "style": "clockwork",
+    "motif": [12, 12, 19, 16, 21, 19, 16, 14, 12, 19, 24, 23, 21, 16, 19, 11]
+  },
+  "forest": {
+    "title": "Aurora Spell",
+    "bpm": 108,
+    "root": 57,
+    "minor": true,
+    "style": "winter",
+    "motif": [12, 15, 19, 22, 19, 15, 14, 10, 12, 19, 22, 24, 22, 19, 15, 14]
+  },
+  "rooftops": {
+    "title": "Midnight Sleigh Chase",
+    "bpm": 172,
+    "root": 65,
+    "minor": false,
+    "style": "chase",
+    "motif": [12, 19, 24, 28, 26, 24, 23, 19, 16, 19, 21, 24, 23, 19, 16, 14]
+  },
+  "fortress": {
+    "title": "Cathedral of Frost",
+    "bpm": 128,
+    "root": 55,
+    "minor": true,
+    "style": "winter",
+    "motif": [12, 15, 19, 24, 23, 19, 15, 11, 12, 19, 23, 27, 24, 19, 15, 11]
+  },
+  "rob": {
+    "title": "The King's Collection",
+    "bpm": 116,
+    "root": 48,
+    "minor": true,
+    "style": "kingpin",
+    "motif": [12, 19, 24, 27, 26, 19, 15, 12, 19, 24, 31, 27, 26, 22, 19, 15]
+  },
+  "santa": {
+    "title": "Crown of the North Pole",
+    "bpm": 158,
+    "root": 60,
+    "minor": false,
+    "style": "finale",
+    "motif": [12, 19, 24, 28, 26, 23, 19, 16, 12, 16, 21, 24, 28, 26, 19, 14]
+  },
+  "santaFinal": {
+    "title": "Final Delivery",
+    "bpm": 158,
+    "root": 60,
+    "minor": false,
+    "style": "finale-intense",
+    "motif": [12, 19, 24, 28, 26, 23, 19, 16, 12, 16, 21, 24, 28, 26, 19, 14]
+  },
+  "victory": {
+    "title": "Festive Glory",
+    "bpm": 144,
+    "root": 60,
+    "minor": false,
+    "style": "anthem",
+    "motif": [12, 16, 19, 24, 28, 26, 24, 19, 21, 24, 28, 31, 28, 24, 19, 24]
+  },
+  "defeat": {
+    "title": "One More Credit",
+    "bpm": 100,
+    "root": 57,
+    "minor": true,
+    "style": "winter",
+    "motif": [24, 22, 19, 15, 14, 12, 10, 7, 12, 15, 19, 17, 15, 14, 10, 12]
+  },
+  "ending": {
+    "title": "Christmas Arcade Champion",
+    "bpm": 136,
+    "root": 60,
+    "minor": false,
+    "style": "anthem",
+    "motif": [12, 16, 19, 24, 28, 26, 24, 19, 21, 24, 28, 31, 28, 26, 24, 19]
+  }
+}

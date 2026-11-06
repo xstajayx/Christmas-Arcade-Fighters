@@ -1,161 +1,258 @@
 {
-  "version": 1,
-  "status": "original synthesized robotic announcer; listening and device review required",
+  "version": 2,
+  "status": "Processed offline robotic fallback; professional recordings remain missing. Listening review required.",
   "clips": [
     {
       "id": "jamie",
       "file": "jamie.wav",
-      "duration": 0.4345578231292517
+      "compressed": "jamie.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.3876643990929705
     },
     {
       "id": "nash",
       "file": "nash.wav",
-      "duration": 0.40439909297052157
+      "compressed": "nash.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.3711111111111111
     },
     {
       "id": "bucket",
       "file": "bucket.wav",
-      "duration": 0.48643990929705216
+      "compressed": "bucket.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.439047619047619
     },
     {
       "id": "beardy",
       "file": "beardy.wav",
-      "duration": 0.5156009070294785
+      "compressed": "beardy.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.45356009070294784
     },
     {
       "id": "round-one",
       "file": "round-one.wav",
-      "duration": 0.7841269841269841
+      "compressed": "round-one.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.7072562358276644
     },
     {
       "id": "round-two",
       "file": "round-two.wav",
-      "duration": 0.7714739229024943
+      "compressed": "round-two.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.6829024943310658
     },
     {
       "id": "final-round",
       "file": "final-round.wav",
-      "duration": 0.8424943310657597
+      "compressed": "final-round.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.7676643990929706
     },
     {
       "id": "fight",
       "file": "fight.wav",
-      "duration": 0.45147392290249433
+      "compressed": "fight.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.41678004535147395
     },
     {
       "id": "first-hit",
       "file": "first-hit.wav",
-      "duration": 0.7490249433106576
+      "compressed": "first-hit.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.6838095238095238
     },
     {
       "id": "counter",
       "file": "counter.wav",
-      "duration": 0.5899319727891157
+      "compressed": "counter.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.5287528344671202
     },
     {
       "id": "combo",
       "file": "combo.wav",
-      "duration": 0.6105215419501134
+      "compressed": "combo.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.5595918367346939
     },
     {
       "id": "super",
       "file": "super.wav",
-      "duration": 0.5027210884353741
+      "compressed": "super.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.7704761904761904
     },
     {
       "id": "knockout",
       "file": "knockout.wav",
-      "duration": 0.5271655328798186
+      "compressed": "knockout.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.4910204081632653
     },
     {
       "id": "perfect",
       "file": "perfect.wav",
-      "duration": 0.6636734693877551
+      "compressed": "perfect.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.6051700680272109
     },
     {
       "id": "you-win",
       "file": "you-win.wav",
-      "duration": 0.5921541950113378
+      "compressed": "you-win.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.5293877551020408
     },
     {
       "id": "you-lose",
       "file": "you-lose.wav",
-      "duration": 0.6625850340136055
+      "compressed": "you-lose.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.5872562358276644
     },
     {
       "id": "final-boss",
       "file": "final-boss.wav",
-      "duration": 0.8090249433106576
+      "compressed": "final-boss.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.7213151927437642
     },
     {
       "id": "congratulations",
       "file": "congratulations.wav",
-      "duration": 1.2704308390022676
+      "compressed": "congratulations.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.166984126984127
     },
     {
       "id": "santa-slam",
       "file": "santa-slam.wav",
-      "duration": 0.9476643990929705
+      "compressed": "santa-slam.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.8727437641723356
     },
     {
       "id": "reindeer-rampage",
       "file": "reindeer-rampage.wav",
-      "duration": 1.0732426303854876
+      "compressed": "reindeer-rampage.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.0047619047619047
     },
     {
       "id": "bucket-blizzard",
       "file": "bucket-blizzard.wav",
-      "duration": 0.9624943310657597
+      "compressed": "bucket-blizzard.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.8732879818594105
     },
     {
       "id": "festive-fury",
       "file": "festive-fury.wav",
-      "duration": 0.9607709750566893
+      "compressed": "festive-fury.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.8862131519274377
     },
     {
       "id": "choose-your-fighter",
       "file": "choose-your-fighter.wav",
-      "duration": 1.1126984126984127
+      "compressed": "choose-your-fighter.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.0040362811791383
     },
     {
       "id": "new-challenger",
       "file": "new-challenger.wav",
-      "duration": 0.8764625850340136
+      "compressed": "new-challenger.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.794421768707483
     },
     {
       "id": "boss-battle",
       "file": "boss-battle.wav",
-      "duration": 0.712108843537415
+      "compressed": "boss-battle.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.667437641723356
     },
     {
       "id": "final-battle",
       "file": "final-battle.wav",
-      "duration": 0.8835827664399093
+      "compressed": "final-battle.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.8103401360544218
     },
     {
       "id": "rob",
       "file": "rob.wav",
-      "duration": 0.9429931972789115
+      "compressed": "rob.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.851609977324263
     },
     {
       "id": "santa",
       "file": "santa.wav",
-      "duration": 0.5544217687074829
+      "compressed": "santa.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.5058956916099773
     },
     {
       "id": "the-rob-father-special",
       "file": "the-rob-father-special.wav",
-      "duration": 1.3617233560090702
+      "compressed": "the-rob-father-special.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.2398185941043083
     },
     {
       "id": "santas-final-delivery",
       "file": "santas-final-delivery.wav",
-      "duration": 1.5394557823129251
+      "compressed": "santas-final-delivery.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.408843537414966
     },
     {
       "id": "frost",
       "file": "frost.wav",
-      "duration": 0.8352834467120182
+      "compressed": "frost.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.732108843537415
+    },
+    {
+      "id": "christmas-arcade-fighters",
+      "file": "christmas-arcade-fighters.wav",
+      "compressed": "christmas-arcade-fighters.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.511156462585034
+    },
+    {
+      "id": "five-hit-combo",
+      "file": "five-hit-combo.wav",
+      "compressed": "five-hit-combo.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.1593650793650794
+    },
+    {
+      "id": "special-attack",
+      "file": "special-attack.wav",
+      "compressed": "special-attack.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.8234920634920635
+    },
+    {
+      "id": "super-ready",
+      "file": "super-ready.wav",
+      "compressed": "super-ready.mp3",
+      "quality": "robotic-fallback",
+      "duration": 0.713015873015873
+    },
+    {
+      "id": "christmas-arcade-champion",
+      "file": "christmas-arcade-champion.wav",
+      "compressed": "christmas-arcade-champion.mp3",
+      "quality": "robotic-fallback",
+      "duration": 1.530748299319728
     }
   ],
   "required": [
@@ -189,10 +286,37 @@
     "santa",
     "the-rob-father-special",
     "santas-final-delivery",
-    "frost"
+    "frost",
+    "christmas-arcade-fighters",
+    "five-hit-combo",
+    "special-attack",
+    "super-ready",
+    "christmas-arcade-champion"
   ],
   "generator": "eSpeak NG Emscripten (build-time only) + FFmpeg",
   "text": {
+    "jamie": "jamie!",
+    "nash": "nash!",
+    "bucket": "bucket!",
+    "beardy": "beardy!",
+    "round-one": "round one!",
+    "round-two": "round two!",
+    "final-round": "final round!",
+    "fight": "fight!",
+    "first-hit": "first hit!",
+    "counter": "counter!",
+    "combo": "combo!",
+    "super": "Super attack!",
+    "knockout": "knockout!",
+    "perfect": "perfect!",
+    "you-win": "you win!",
+    "you-lose": "you lose!",
+    "final-boss": "final boss!",
+    "congratulations": "congratulations!",
+    "santa-slam": "santa slam!",
+    "reindeer-rampage": "reindeer rampage!",
+    "bucket-blizzard": "bucket blizzard!",
+    "festive-fury": "festive fury!",
     "choose-your-fighter": "Choose your fighter!",
     "new-challenger": "New challenger!",
     "boss-battle": "Boss battle!",
@@ -201,7 +325,12 @@
     "santa": "Santa!",
     "the-rob-father-special": "The Rob Father Special!",
     "santas-final-delivery": "Santa's Final Delivery!",
-    "frost": "Frost Jamie!"
+    "frost": "Frost Jamie!",
+    "christmas-arcade-fighters": "Christmas Arcade Fighters!",
+    "five-hit-combo": "Five hit combo!",
+    "special-attack": "Special attack!",
+    "super-ready": "Super ready!",
+    "christmas-arcade-champion": "Christmas Arcade Champion!"
   },
   "productionStatus": "Robotic fallback pack. Professional projected human/neural arcade performance NOT produced or approved."
 }

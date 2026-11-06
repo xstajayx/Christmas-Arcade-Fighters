@@ -13,6 +13,9 @@ const mime = {
   ".png": "image/png",
   ".svg": "image/svg+xml",
   ".json": "application/json",
+  ".mp3": "audio/mpeg",
+  ".ogg": "audio/ogg",
+  ".wav": "audio/wav",
   ".webmanifest": "application/manifest+json",
 };
 createServer(async (req, res) => {
