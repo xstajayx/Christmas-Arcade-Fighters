@@ -23,3 +23,9 @@ export async function chooseMode(page: Page, mode: string) {
     })
     .click();
 }
+
+export async function openTrainingTools(page: Page) {
+  const tools = page.locator("details.training-bar");
+  if ((await tools.count()) && (await tools.getAttribute("open")) === null)
+    await tools.locator("summary").click();
+}

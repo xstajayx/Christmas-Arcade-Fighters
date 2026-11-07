@@ -33,7 +33,7 @@ async function start(page: Page) {
     };
     const [a, b] = scene.bridge.match.fighters;
     a.x = a.previousX = 350;
-    b.x = b.previousX = 471;
+    b.x = b.previousX = 450;
   });
 }
 async function frames(page: Page, n: number) {

@@ -1,4 +1,5 @@
-import { balance, normalDamage, strikeReach } from "../combat/balance";
+import { strikeContact } from "../combat/contact";
+import { balance, normalDamage } from "../combat/balance";
 export type FighterId =
   "jamie" | "nash" | "bucket" | "beardy" | "frost" | "rob" | "santa";
 export interface FighterDef {
@@ -658,17 +659,12 @@ export function getMove(
       poseRow: dash ? dashRows[id] : projectileRows[id],
     });
   }
-  if (move === "punch" || move === "kick")
-    m.range =
-      (strikeReach[id][move === "punch" ? 0 : 1] - 13) /
-      fighterById(id, profile).reach;
-  if (["heavyPunch", "heavyKick", "low", "air", "airPunch"].includes(move))
-    m.range =
-      ((move === "heavyKick" ? 98 : move === "heavyPunch" ? 90 : 88) - 13) /
-      fighterById(id, profile).reach;
   if (profile === "standard" && move === "special")
     m.range = (96 - 13) / fighterById(id).reach;
   if (m.kind === "throw") m.range = (97 - 13) / fighterById(id, profile).reach;
+  const contact = strikeContact(id, move);
+  if (contact)
+    m.range = (contact.reach + 2 - 13) / fighterById(id, profile).reach;
   if (move === "super")
     m.damage = Math.round(
       (balance.superReferenceHealth * balance.superFraction) /

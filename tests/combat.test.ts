@@ -41,7 +41,7 @@ describe("fixed-step combat", () => {
     expect(m.fighters[1].health).toBe(hp - 1);
     const low = ready();
     // Pin the defender so walking backward cannot turn the low into a whiff.
-    low.fighters[0].x = RIGHT - 124;
+    low.fighters[0].x = RIGHT - 100;
     low.fighters[1].x = RIGHT;
     run(low, 25, { down: true, punch: true }, { right: true });
     expect(low.fighters[1].health).toBeLessThan(hp - 1);
@@ -51,7 +51,8 @@ describe("fixed-step combat", () => {
   });
   it("grabs defeat a guard at close range", () => {
     const m = ready();
-    m.fighters[1].x = 390;
+    m.fighters[0].x = RIGHT - 100;
+    m.fighters[1].x = RIGHT;
     run(m, 55, { grab: true }, { right: true });
     expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health - 10);
     expect(m.fighters[1].state).toBe("knockdown");

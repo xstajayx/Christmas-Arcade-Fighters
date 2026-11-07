@@ -17,7 +17,7 @@ const ready = () => {
   const m = createMatch("jamie", "beardy", true);
   m.phase = "fight";
   m.fighters[0].x = 350;
-  m.fighters[1].x = 471;
+  m.fighters[1].x = 450;
   return m;
 };
 const run = (m: Match, ticks: number, a: Input = {}, b: Input = {}) => {
@@ -274,7 +274,7 @@ describe("V4 shared movement and airborne combat", () => {
         );
         m.phase = "fight";
         const [a, b] = m.fighters;
-        a.x = edge === RIGHT ? RIGHT - 124 : LEFT + 124;
+        a.x = edge === RIGHT ? RIGHT - 100 : LEFT + 100;
         b.x = edge;
         a.facing = edge === RIGHT ? 1 : -1;
         launch(m);
@@ -308,7 +308,7 @@ describe("V4 shared movement and airborne combat", () => {
       m.phase = "fight";
       const [a, b] = m.fighters;
       a.x = 350;
-      b.x = 474;
+      b.x = 450;
       step(m, [{}, { punch: true, heavy: true }]);
       for (let i = 0; i < 50 && a.state !== "airHit"; i++) step(m, [{}, {}]);
       expect(a.state).toBe("airHit");

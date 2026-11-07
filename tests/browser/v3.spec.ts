@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { chooseMode } from "./helpers";
+import { chooseMode, openTrainingTools } from "./helpers";
 import type { Match } from "../../src/combat/engine";
 type Snapshot = {
   screen: string;
@@ -24,7 +24,7 @@ test("V3 menu, locked roster, directional touch controls and live sprite inspect
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await expect(page.locator(".v3-primary button")).toHaveCount(5);
+  await expect(page.locator(".v3-primary button")).toHaveCount(6);
   await chooseMode(page, "TRAINING");
   await expect(page.locator("[data-action=pick-rob]")).toBeDisabled();
   await expect(page.locator("[data-action=pick-santa]")).toBeDisabled();
@@ -43,6 +43,7 @@ test("V3 menu, locked roster, directional touch controls and live sprite inspect
       (s) => s.originX === 0.5 && s.originY === 244 / 256,
     ),
   ).toBe(true);
+  await openTrainingTools(page);
   await page
     .getByRole("button", { name: "SPRITE INSPECTOR", exact: true })
     .click();

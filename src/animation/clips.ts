@@ -60,7 +60,10 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
     // phases, without substituting standing kicks for missing descent artwork.
     return motionPhase(f) === "jumpStart" ? 6 : 7;
   }
-  if (f.state === "landing") sequence = clips.landing;
+  if (f.state === "landing")
+    return clips.landing[
+      Math.min(2, Math.floor(f.frame / Math.max(1, (f.frame + f.stun) / 3)))
+    ];
   if (f.state === "crouch") sequence = clips.crouch;
   if (f.state === "block")
     sequence = f.previous.down ? clips.lowGuard : clips.guard;

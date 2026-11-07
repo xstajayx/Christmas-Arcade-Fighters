@@ -34,24 +34,15 @@ export const balance = {
   maxCombo: 6,
   maxJuggles: 3,
 };
+// Standing torso spacing leaves room for a visibly extended fist or boot.
 export const bodyWidths = {
-  jamie: 120,
-  nash: 124,
-  bucket: 120,
-  beardy: 122,
-  frost: 120,
-  rob: 124,
-  santa: 124,
-};
-// Contact endpoints measured from the feet anchor, in world units; small character differences retained.
-export const strikeReach = {
-  jamie: [84, 92],
-  nash: [86, 94],
-  bucket: [84, 92],
-  beardy: [85, 93],
-  frost: [84, 92],
-  rob: [86, 94],
-  santa: [86, 94],
+  jamie: 96,
+  nash: 102,
+  bucket: 98,
+  beardy: 98,
+  frost: 96,
+  rob: 104,
+  santa: 104,
 };
 export const normalDamage = {
   punch: 30,

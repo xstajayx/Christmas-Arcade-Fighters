@@ -2,6 +2,7 @@ import { activeSuper } from "./combat/presentation";
 import Phaser from "phaser";
 import "./style.css";
 import "./arcade.css";
+import "./ultimate.css";
 import { Arena, type SceneBridge } from "./scenes/Arena";
 import {
   fighters,
@@ -113,6 +114,21 @@ const bridge: SceneBridge = {
     if (screen === "loading") showTitle();
   },
 };
+let counterNotice: { match: Match; until: number } | null = null;
+function updateViewport() {
+  bridge.controlSafeBottom = Math.max(
+    132,
+    ((100 * save.settings.controlSize * (save.settings.compact ? 0.82 : 1) +
+      save.settings.controlLift +
+      16) *
+      450) /
+      (document.getElementById("game-wrap")?.clientHeight || 450),
+  );
+  bridge.touchLayout = matchMedia("(pointer: coarse)").matches;
+  document.body.dataset.touch = String(bridge.touchLayout);
+}
+window.addEventListener("resize", updateViewport);
+updateViewport();
 function applySettings() {
   sound.music = save.settings.music;
   sound.effects = save.settings.effects;
@@ -138,6 +154,7 @@ function applySettings() {
   );
   $("#sound-toggle").classList.toggle("is-muted", sound.muted);
   $("#sound-toggle").setAttribute("aria-pressed", String(sound.muted));
+  updateViewport();
   persist(save);
 }
 applySettings();
@@ -191,7 +208,9 @@ function setScreen(s: Screen, html: string) {
   }
   document.getElementById("move-callout")?.replaceChildren();
   bridge.combatVisible = s === "match";
+  counterNotice = null;
   screen = s;
+  document.body.dataset.screen = s;
   overlay.innerHTML = html;
   overlay.className = s;
   overlay.hidden = s === "match";
@@ -218,20 +237,21 @@ function showMenu() {
   sound.setTrack("menu");
   setScreen(
     "menu",
-    `<div class="v3-menu"><img class="entrance-fighter entrance-left" src="${portrait("jamie")}" alt="" aria-hidden="true"><img class="entrance-fighter entrance-right" src="${portrait("bucket")}" alt="" aria-hidden="true"><div class="tournament-banner" aria-hidden="true">THE FESTIVE FIGHT NIGHT</div><h1 class="v3-logo">CHRISTMAS <span>ARCADE FIGHTERS</span></h1><nav class="v3-primary" aria-label="Arcade menu">${[
+    `<div class="v3-menu v5-entrance"><img class="hd-key-art" src="${import.meta.env.BASE_URL}art/tournament-hd.webp" width="1672" height="941" alt="Jamie and Beardy face off in the snowy tournament village"><div class="menu-light" aria-hidden="true"></div><div class="entrance-content"><p class="tournament-banner">THE CHRISTMAS TOURNAMENT</p><h1 class="v3-logo">CHRISTMAS<span>ARCADE FIGHTERS</span></h1><nav class="v3-primary" aria-label="Arcade menu">${[
       ["ARCADE", "arcade"],
       ["VERSUS", "versusmenu"],
       ["TRAINING", "training"],
       ["CHARACTERS", "characters"],
+      ["MORE MODES", "more"],
       ["OPTIONS", "settings"],
     ]
       .map(
         ([label, action], i) =>
-          `<button class="arcade-choice" data-action="${action}" aria-label="${label}"><i aria-hidden="true">0${i + 1}</i><span>${label}</span><b aria-hidden="true">▶</b></button>`,
+          `<button class="arcade-choice" data-action="${action}" aria-label="${label}"><i aria-hidden="true">0${i + 1}</i><span>${label}</span><b aria-hidden="true">›</b></button>`,
       )
       .join(
         "",
-      )}</nav><div class="v3-utility">${button("FULLSCREEN", "fullscreen", "secondary")}${button("MORE MODES", "more", "secondary")}${button("HOW TO PLAY", "how", "text-btn")}<small>CHRISTMAS TOURNAMENT · V3.3</small></div><p id="fullscreen-status" role="status"></p></div>`,
+      )}</nav><div class="v3-utility">${button("FULLSCREEN", "fullscreen", "secondary")}${button("HOW TO PLAY", "how", "text-btn")}</div><p id="fullscreen-status" role="status"></p></div><div class="entrance-stamp" aria-hidden="true">V<span>5</span> / ULTIMATE</div></div>`,
   );
   if (sound.state === "running")
     void sound.announce(
@@ -310,7 +330,7 @@ function select() {
   const announceSelection = screen !== "select";
   setScreen(
     "select",
-    `<div class="panel select-panel">${chip(mode === "versus" ? "LOCAL RIVALRY" : "MEET THE NAUGHTY LIST")}<h2>CHOOSE YOUR FIGHTER.</h2><div class="fighters-grid">${roster.map((f) => `<button class="fighter-card ${f.id === chosen ? "selected" : ""} ${save.unlocked.includes(f.id) ? "" : "locked"}" ${save.unlocked.includes(f.id) ? "" : "disabled"} style="--fighter:${"#" + f.color.toString(16)}" data-action="pick-${f.id}" aria-pressed="${f.id === chosen}"><span class="fighter-number">0${roster.indexOf(f) + 1}</span><img data-fighter="${f.id}" data-portrait="close" src="${portrait(f.id, 0, true)}" alt="Pixel portrait of ${f.name}"><strong class="fighter-name">${f.name}</strong><small>${save.unlocked.includes(f.id) ? f.title : `DEFEAT ${f.id === "rob" ? "ROB FATHER · LV 8" : "SANTA · LV 10"}`}</small><span class="select-marker">${!save.unlocked.includes(f.id) ? "LOCKED" : f.id === chosen ? "PLAYER 1" : "SELECT"}</span></button>`).join("")}</div><div class="fighter-detail"><div><h3>${chosen.toUpperCase()} <span>${fighterById(chosen).special}</span></h3><p>${fighterById(chosen).bio}</p></div><div class="fighter-stats">${["POWER", "SPEED", "DEFENCE"].map((label, i) => `<span>${label} <b>${"▰".repeat(fighterById(chosen).stats[i])}<i>${"▱".repeat(5 - fighterById(chosen).stats[i])}</i></b></span>`).join("")}</div></div><div class="panel-footer">${button("← MODES", "menu", "text-btn")}${
+    `<div class="panel select-panel">${chip(mode === "versus" ? "LOCAL RIVALRY" : "MEET THE NAUGHTY LIST")}<h2>CHOOSE YOUR FIGHTER.</h2><div class="fighters-grid fighter-select">${roster.map((f) => `<button class="fighter-card fighter-pick ${f.id === chosen ? "selected" : ""} ${save.unlocked.includes(f.id) ? "" : "locked"}" ${save.unlocked.includes(f.id) ? "" : "disabled"} style="--fighter:${"#" + f.color.toString(16)}" data-action="pick-${f.id}" aria-pressed="${f.id === chosen}"><span class="fighter-number">0${roster.indexOf(f) + 1}</span><img data-fighter="${f.id}" data-portrait="close" src="${portrait(f.id, 0, true)}" alt="Pixel portrait of ${f.name}"><strong class="fighter-name">${f.name}</strong><small>${save.unlocked.includes(f.id) ? f.title : `DEFEAT ${f.id === "rob" ? "ROB FATHER · LV 8" : "SANTA · LV 10"}`}</small><span class="select-marker">${!save.unlocked.includes(f.id) ? "LOCKED" : f.id === chosen ? "PLAYER 1" : "SELECT"}</span></button>`).join("")}</div><div class="fighter-detail"><div><h3>${chosen.toUpperCase()} <span>${fighterById(chosen).special}</span></h3><p>${fighterById(chosen).bio}</p></div><div class="fighter-stats">${["POWER", "SPEED", "DEFENCE"].map((label, i) => `<span>${label} <b>${"▰".repeat(fighterById(chosen).stats[i])}<i>${"▱".repeat(5 - fighterById(chosen).stats[i])}</i></b></span>`).join("")}</div></div><div class="panel-footer">${button("← MODES", "menu", "text-btn")}${
       mode === "arcade" || mode === "survival"
         ? `<label>CPU DIFFICULTY <select id="select-difficulty">${["easy", "normal", "hard", "master"].map((d) => `<option ${save.settings.difficulty === d ? "selected" : ""}>${d}</option>`).join("")}</select></label>`
         : `<label>${mode === "versus" ? "PLAYER 2" : "OPPONENT"} <select id="opponent">${roster
@@ -372,11 +392,13 @@ function stages() {
             .join(
               "",
             )}</div><div class="next-challenge"><img src="${stageImage(bout.stage)}" alt="${stageNames[bout.stage]}"><h3>${fighterById(bout.opponent).name}</h3><p>${bout.challenge}</p><p>${bout.line}</p></div>`
-        : `<div class="stage-grid">${stageNames.map((name, i) => `<button data-action="stage-${i}" class="stage-card ${stage === i ? "selected" : ""}"><span class="stage-preview"><img src="${stageImage(i)}" alt="${name} pixel scenery"></span><strong>${name}</strong><span>${stageSubtitles[i]}</span></button>`).join("")}</div>${button("RANDOM ARENA", "randomstage", "secondary")}`
+        : `<div class="arena-selector"><div class="selected-arena"><img src="${stageImage(stage)}" alt="${stageNames[stage]}"><div><small>ARENA ${stage + 1} / ${stageNames.length}</small><h3>${stageNames[stage]}</h3><p>${stageSubtitles[stage]}</p></div></div><div class="stage-grid">${stageNames.map((name, i) => `<button data-action="stage-${i}" class="stage-card ${stage === i ? "selected" : ""}"><span class="stage-preview"><img src="${stageImage(i)}" alt="${name} pixel scenery"></span><strong>${name}</strong><span>${stageSubtitles[i]}</span></button>`).join("")}</div></div>${button("RANDOM ARENA", "randomstage", "secondary")}`
     }<div class="panel-footer">${button("← FIGHTERS", "select", "text-btn")}${button("START FIGHT →", "start", "primary")}</div></div>`,
   );
 }
+const stageImageCache = new Map<number, string>();
 function stageImage(i: number) {
+  if (stageImageCache.has(i)) return stageImageCache.get(i)!;
   const canvas = document.createElement("canvas");
   canvas.width = 800;
   canvas.height = 450;
@@ -389,7 +411,9 @@ function stageImage(i: number) {
       0,
       0,
     );
-  return canvas.toDataURL();
+  const url = canvas.toDataURL();
+  stageImageCache.set(i, url);
+  return url;
 }
 function tutorial(fromStart = false) {
   setScreen(
@@ -502,7 +526,7 @@ function begin() {
   }
 }
 function buildHud() {
-  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><div class="name-line"><b id="fighter-name-p1">${fighterById(match!.fighters[0].id).name}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><div class="name-line"><b id="fighter-name-p2">${fighterById(match!.fighters[1].id).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><button id="fullscreen-game" aria-label="Fullscreen game">⛶</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1"></span><span class="special-moves" id="moves-p1"></span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2"></span><span class="special-moves" id="moves-p2"></span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? '<div class="training-bar"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span><label><input type="checkbox" id="show-hitboxes"> HITBOXES</label><button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button><button id="inspect-sprites">SPRITE INSPECTOR</button></div>' : ""}`;
+  hud.innerHTML = `<div class="fight-hud"><div class="player-hud"><img class="hud-portrait" src="${portrait(match!.fighters[0].id, 0, true)}" alt=""><div class="name-line"><b id="fighter-name-p1">${fighterById(match!.fighters[0].id).name}</b><small>P1 · ${mode === "versus" ? "LOCAL" : "YOU"}</small><span id="score-p1">000000</span></div><div class="health-frame"><i id="health-echo-p1" class="health-loss"></i><div id="health-p1" class="health-fill"></div></div><div class="round-dots" id="rounds-p1"></div></div><div class="timer-frame"><span>ROUND <b id="round">1</b></span><strong id="timer">99</strong></div><div class="player-hud p2"><img class="hud-portrait" src="${portrait(match!.fighters[1].id, 0, true)}" alt=""><div class="name-line"><b id="fighter-name-p2">${fighterById(match!.fighters[1].id).name}</b><small>${mode === "versus" ? "P2 · LOCAL" : mode === "training" ? "DUMMY" : "CPU"}</small><span id="score-p2">000000</span></div><div class="health-frame"><i id="health-echo-p2" class="health-loss"></i><div id="health-p2" class="health-fill"></div></div><div class="round-dots" id="rounds-p2"></div></div></div><div class="arena-label">${stageNames[stage]} <span> / ${mode.toUpperCase()}</span></div><button id="pause-button" aria-label="Pause game">II</button><button id="fullscreen-game" aria-label="Fullscreen game">⛶</button><div id="announcement"></div><div class="meter-row"><div><span id="special-p1"></span><span class="special-moves" id="moves-p1"></span><div class="meter-frame"><i id="meter-p1"></i></div></div><div><span id="special-p2"></span><span class="special-moves" id="moves-p2"></span><div class="meter-frame"><i id="meter-p2"></i></div></div></div><div id="combo"></div><div class="super-meter-row"><span id="super-p1"></span><span id="super-p2"></span></div><div id="move-callout"></div>${mode === "training" ? `<details class="training-bar"><summary>TRAINING TOOLS</summary><div class="training-content"><label>DUMMY <select id="dummy"><option value="stand">Stand</option><option value="block">Block</option><option value="attack">Attack</option><option value="jump">Jump</option><option value="random">Random</option></select></label><span id="training-stats">0 HITS · 0 DAMAGE</span>${import.meta.env.DEV ? '<label><input type="checkbox" id="show-hitboxes"> COLLISIONS</label>' : ""}<button id="training-meter">FULL METERS</button><button id="reset-training">RESET</button><button id="inspect-sprites">SPRITE INSPECTOR</button></div></details>` : ""}`;
   $("#pause-button").onclick = () => pause();
   $("#fullscreen-game").onclick = () => {
     void fullscreen();
@@ -512,8 +536,9 @@ function buildHud() {
     $<HTMLSelectElement>("#dummy").value = dummy;
     $("#dummy").onchange = (e) =>
       (dummy = (e.target as HTMLSelectElement).value as Dummy);
-    $("#show-hitboxes").onchange = (e) =>
-      (bridge.debug = (e.target as HTMLInputElement).checked);
+    if (import.meta.env.DEV)
+      $("#show-hitboxes").onchange = (e) =>
+        (bridge.debug = (e.target as HTMLInputElement).checked);
     $("#training-meter").onclick = () => {
       if (match)
         for (const f of match.fighters) {
@@ -583,11 +608,20 @@ function renderHud() {
   const superFighter = activeSuper(m);
   $("#move-callout").textContent = superFighter
     ? signatures[superFighter.id][3]
-    : "";
+    : counterNotice?.match === m &&
+        m.phase === "fight" &&
+        m.tick < counterNotice.until
+      ? "COUNTER!"
+      : "";
   for (let i = 0; i < 2; i++) {
     const f = m.fighters[i],
       id = `p${i + 1}`;
     $(`#health-${id}`).style.width = `${(f.health / f.maxHealth) * 100}%`;
+    $(`#health-echo-${id}`).style.width = `${(f.health / f.maxHealth) * 100}%`;
+    $(`#health-${id}`).parentElement!.setAttribute(
+      "aria-label",
+      `${fighterById(f.id).name} health ${f.health} of ${f.maxHealth}`,
+    );
     $(`#health-${id}`).classList.toggle(
       "danger",
       f.health < f.maxHealth * 0.25,
@@ -602,7 +636,11 @@ function renderHud() {
     );
     html(
       $(`#special-${id}`),
-      `<span class="special-kind">SPECIAL${f.meter >= Math.min(sp1.cost, sp2.cost) ? " READY" : ""}</span> <b>${Math.floor(f.meter)}%</b>`,
+      `<span class="special-kind">SPECIAL</span> <b>${Math.floor(f.meter)}%</b>`,
+    );
+    $(`#special-${id}`).setAttribute(
+      "aria-label",
+      `${fighterById(f.id).name}: Special ${Math.floor(f.meter)}%; SP1 ${sp1.name}, ${sp1.cost} meter; SP2 ${sp2.name}, ${sp2.cost} meter`,
     );
     html(
       $(`#moves-${id}`),
@@ -733,7 +771,10 @@ function tick(delta: number) {
         ev.move,
         match.fighters[ev.player || 0].id,
       );
-    if (ev.type === "counter") void sound.announce("counter", "Counter!");
+    if (ev.type === "counter") {
+      counterNotice = { match, until: match.tick + 30 };
+      void sound.announce("counter", "Counter!");
+    }
     if (ev.type === "bossPhase") {
       const boss = match.fighters[ev.player || 1];
       if (boss.id === "santa" && boss.bossPhase === 2)

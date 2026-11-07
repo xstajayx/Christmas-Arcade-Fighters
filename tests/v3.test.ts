@@ -20,7 +20,7 @@ it("frames discard disconnected neighbouring limbs and anchor the body at the fe
   expect(out.pixels[(244 * 256 + 230) * 4 + 3]).toBe(0);
 });
 it("camera starts closer and fits separated fighters, jumps and both corners", () => {
-  expect(initialFraming().zoom).toBe(1.25);
+  expect(initialFraming().zoom).toBe(1.35);
   for (const [ax, bx, ay, by] of [
     [245, 555, 300, 300],
     [45, 755, 300, 300],
@@ -33,7 +33,7 @@ it("camera starts closer and fits separated fighters, jumps and both corners", (
     b.y = by;
     const c = targetFraming([a, b]);
     expect(c.zoom).toBeGreaterThanOrEqual(0.82);
-    expect(c.zoom).toBeLessThanOrEqual(1.28);
+    expect(c.zoom).toBeLessThanOrEqual(1.52);
     for (const f of [a, b]) {
       expect(f.x - 75).toBeGreaterThanOrEqual(c.x - 400 / c.zoom - 1);
       expect(f.x + 75).toBeLessThanOrEqual(c.x + 400 / c.zoom + 1);

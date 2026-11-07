@@ -1,3 +1,4 @@
+import { strikeContact, torsoWidth } from "./contact";
 import { difficultyTuning } from "./difficulty";
 import type { Difficulty } from "../ai/cpu";
 import { activeSuper } from "./presentation";
@@ -281,6 +282,18 @@ export function activeHitbox(f: Fighter) {
     return null;
   if (f.frame < d.startup || f.frame >= d.startup + d.active) return null;
   if (d.hitGap && (f.frame - d.startup) % d.hitGap >= 4) return null;
+  const contact = strikeContact(f.id, f.move);
+  if (contact) {
+    const tolerance = 2;
+    const end = contact.reach + tolerance;
+    const width = f.move === "grab" ? end - 13 : Math.min(26, end);
+    return {
+      x: f.facing === 1 ? f.x + end - width : f.x - end,
+      y: f.y - contact.height - 14,
+      w: width,
+      h: 28,
+    };
+  }
   return {
     x:
       f.x +
@@ -295,13 +308,13 @@ export function activeHitbox(f: Fighter) {
   };
 }
 export const hurtbox = (f: Fighter) => ({
-  x: f.x - 40,
+  x: f.x - torsoWidth[f.id] / 2,
   y:
     f.y -
     (f.state === "crouch" || (f.state === "block" && f.previous.down)
       ? 125
       : 167),
-  w: 80,
+  w: torsoWidth[f.id],
   h:
     f.state === "crouch" || (f.state === "block" && f.previous.down)
       ? 125
@@ -314,6 +327,15 @@ export function overlaps(
   return (
     a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
   );
+}
+function contactPoint(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+) {
+  return {
+    x: (Math.max(a.x, b.x) + Math.min(a.x + a.w, b.x + b.w)) / 2,
+    y: (Math.max(a.y, b.y) + Math.min(a.y + a.h, b.y + b.h)) / 2,
+  };
 }
 const clamp = (x: number) => Math.max(LEFT, Math.min(RIGHT, x));
 const free = (f: Fighter) =>
@@ -780,6 +802,7 @@ interface Contact {
   projectile?: Projectile;
   counter?: boolean;
   throwRelease?: boolean;
+  point?: { x: number; y: number };
 }
 function applyContact(m: Match, c: Contact) {
   const f = m.fighters[c.attacker],
@@ -937,8 +960,8 @@ function applyContact(m: Match, c: Contact) {
   m.firstHit ||= !guarded;
   m.events.push({
     type: guarded ? "block" : counter ? "counter" : "hit",
-    x: o.x - o.facing * 18,
-    y: o.y - (d.level === "low" ? 35 : 105),
+    x: c.point?.x ?? o.x + (o.facing * torsoWidth[o.id]) / 2,
+    y: c.point?.y ?? o.y - (d.level === "low" ? 35 : 105),
     damage,
     firstHit,
     player: c.attacker,
@@ -1062,7 +1085,12 @@ export function step(m: Match, inputs: [Input, Input]) {
     )
       continue;
     if (overlaps(box, hurtbox(o)))
-      contacts.push({ attacker: i as 0 | 1, data, move: f.move });
+      contacts.push({
+        attacker: i as 0 | 1,
+        data,
+        move: f.move,
+        point: contactPoint(box, hurtbox(o)),
+      });
   }
   for (const p of m.projectiles) {
     p.life--;
@@ -1082,6 +1110,7 @@ export function step(m: Match, inputs: [Input, Input]) {
         data: p.data,
         move: p.move,
         projectile: p,
+        point: { x: p.x, y: p.y },
       });
       p.life = 0;
     }

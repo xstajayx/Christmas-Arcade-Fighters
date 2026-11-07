@@ -69,7 +69,9 @@ for (const [width, height] of [
     ).toBeVisible();
     const menu = await page.locator(".v3-menu").boundingBox();
     const logo = await page.locator(".v3-logo").boundingBox();
-    expect(logo!.y - menu!.y).toBeLessThan(90);
+    expect(logo!.y - menu!.y).toBeLessThan(
+      height * (width < height ? 0.14 : 0.22),
+    );
     const buttons = await page
       .locator(".v3-primary button,.v3-utility button")
       .evaluateAll((es) => es.map((e) => e.getBoundingClientRect().toJSON()));
@@ -123,13 +125,17 @@ for (const [width, height] of [
           b.left < a.right &&
           a.top < b.bottom &&
           b.top < a.bottom;
-        const special = rect(".meter-row"),
-          superRow = rect(".super-meter-row"),
-          training = rect(".training-bar");
+        const training = rect(".training-bar");
         const joystick = document.querySelector(".joystick")!,
           actions = document.querySelector(".actions")!;
         return {
-          meterOverlap: overlap(special, superRow),
+          meterOverlap: [...document.querySelectorAll(".meter-row>div")].some(
+            (a) =>
+              [...document.querySelectorAll(".super-meter-row>span")].some(
+                (b) =>
+                  overlap(a.getBoundingClientRect(), b.getBoundingClientRect()),
+              ),
+          ),
           trainingOverlap: [joystick, actions]
             .filter(
               (e) =>
@@ -193,10 +199,10 @@ test("feet remain grounded through movement/recovery; throws work in both direct
   expect((await contact())[0].y).toBeLessThan(300);
   await frames(page, 80);
   for (const [index, [ax, bx]] of [
-    [350, 474],
-    [474, 350],
-    [169, 45],
-    [631, 755],
+    [350, 450],
+    [450, 350],
+    [145, 45],
+    [655, 755],
   ].entries()) {
     await page.evaluate(
       async ([ax, bx]) => {
