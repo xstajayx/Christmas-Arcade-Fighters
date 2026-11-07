@@ -1,3 +1,5 @@
+import { HdBank } from "../animation/hd";
+import { motionPhase, renderPosition } from "../animation/motion";
 import { giftFrame, stageLayout } from "../art/stages";
 import { activeSuper as superPresentation } from "../combat/presentation";
 import Phaser from "phaser";
@@ -23,6 +25,9 @@ export interface SceneBridge {
   shake?: boolean;
   debug?: boolean;
   combatVisible?: boolean;
+  renderAlpha?: number;
+  touchLayout?: boolean;
+  controlSafeBottom?: number;
   preview?: { frame: number; special: boolean };
   update: (delta: number) => void;
   ready: () => void;
@@ -35,6 +40,7 @@ interface Particle {
   vy: number;
 }
 export class Arena extends Phaser.Scene {
+  private hd!: HdBank;
   private sprites: Phaser.GameObjects.Sprite[] = [];
   private shadows: Phaser.GameObjects.Ellipse[][] = [];
   private layers: Phaser.GameObjects.Image[] = [];
@@ -70,6 +76,15 @@ export class Arena extends Phaser.Scene {
     makeFighter("jamie", 155, 1),
     makeFighter("bucket", 645, -1),
   ];
+  private impactFlash!: Phaser.GameObjects.Graphics;
+  private impactBursts = Array.from({ length: 8 }, () => ({
+    x: 0,
+    y: 0,
+    age: 1000,
+    duration: 100,
+    guard: false,
+    heavy: false,
+  }));
   private strikeTrail!: Phaser.GameObjects.Graphics;
   private debugGraphic!: Phaser.GameObjects.Graphics;
   private framing = initialFraming();
@@ -99,6 +114,9 @@ export class Arena extends Phaser.Scene {
         originX: s.originX,
         originY: s.originY,
         frame: s.frame.name,
+        motion: this.bridge.match
+          ? motionPhase(this.bridge.match.fighters[this.sprites.indexOf(s)])
+          : "idle",
         texture: s.texture.key,
         bounds: {
           x: s.getBounds().x,
@@ -113,6 +131,10 @@ export class Arena extends Phaser.Scene {
     super("Arena");
   }
   preload() {
+    this.load.json(
+      "hd-catalog",
+      `${import.meta.env.BASE_URL}characters/hd/catalog.json`,
+    );
     this.load.spritesheet(
       "festive-gifts",
       `${import.meta.env.BASE_URL}atlases/festive-gifts.webp`,
@@ -167,6 +189,11 @@ export class Arena extends Phaser.Scene {
     });
   }
   create() {
+    this.hd = new HdBank(
+      this,
+      this.cache.json.get("hd-catalog")?.fighters ?? {},
+    );
+    this.events.once("shutdown", () => this.hd.destroy());
     if (this.errors.length) {
       const overlay = document.querySelector<HTMLElement>("#overlay")!;
       overlay.innerHTML =
@@ -348,6 +375,7 @@ export class Arena extends Phaser.Scene {
         style: "rob",
       });
     this.strikeTrail = this.add.graphics().setDepth(8);
+    this.impactFlash = this.add.graphics().setDepth(9);
     this.debugGraphic = this.add.graphics().setDepth(20);
     this.aura = this.add.graphics().setDepth(4);
     this.scenery = this.add.graphics().setDepth(2);
@@ -392,6 +420,8 @@ export class Arena extends Phaser.Scene {
       (m && m.phase !== "fight")
     ) {
       this.trackedGifts.clear();
+      if (this.effectsMatch !== m || this.bridge.combatVisible === false)
+        for (const b of this.impactBursts) b.age = b.duration;
       for (const effect of this.giftImpacts) {
         effect.age = 360;
         effect.sprite.visible = false;
@@ -441,6 +471,7 @@ export class Arena extends Phaser.Scene {
       }
     }
     const display = m?.fighters || this.demos;
+    this.hd.setFighters(display.map((f) => f.id));
     display.forEach((f, i) => {
       const spr = this.sprites[i];
       const preview = i === 0 ? this.bridge.preview : undefined;
@@ -452,17 +483,21 @@ export class Arena extends Phaser.Scene {
         : signatureThrow ||
           (f.state === "attack" &&
             (f.move?.startsWith("special") || f.move === "super"));
-      const textureKey = special ? `special-${f.id}` : f.id;
+      const hdPose = preview ? undefined : this.hd.pose(f);
+      const textureKey = hdPose?.key ?? (special ? `special-${f.id}` : f.id);
       if (spr.texture.key !== textureKey) spr.setTexture(textureKey);
       spr.setOrigin(0.5, 244 / 256);
-      const frame = preview
-        ? preview.frame
-        : animationFrame(f, m ? f.animTick : Math.floor(time / 16.67));
+      const frame = hdPose
+        ? hdPose.frame
+        : preview
+          ? preview.frame
+          : animationFrame(f, m ? f.animTick : Math.floor(time / 16.67));
+      const position = m ? renderPosition(f, this.bridge.renderAlpha ?? 1) : f;
       spr
         .setFrame(Math.min(frame, spr.texture.frameTotal - 2))
-        .setPosition(Math.round(f.x), Math.round(f.y + 50))
+        .setPosition(position.x, position.y + 50)
         .setFlipX(f.facing < 0)
-        .setScale(0.75)
+        .setScale(hdPose?.scale ?? 0.75)
         .setDepth(5 + f.y / 1000 + f.x / 100000);
       const metadata = (
         spr.texture.customData as {
@@ -474,11 +509,21 @@ export class Arena extends Phaser.Scene {
       ).frames?.[Math.min(frame, spr.texture.frameTotal - 2)];
       if (metadata)
         spr.setOrigin(
-          f.facing < 0 ? 1 - metadata.pivot.x / 256 : metadata.pivot.x / 256,
-          metadata.pivot.y / 256,
+          f.facing < 0
+            ? 1 - metadata.pivot.x / spr.frame.realWidth
+            : metadata.pivot.x / spr.frame.realWidth,
+          metadata.pivot.y / spr.frame.realHeight,
+        );
+      if (hdPose)
+        spr.setPosition(
+          spr.x + (hdPose.metadata.offset?.[0] ?? 0) * spr.scaleX * f.facing,
+          spr.y + (hdPose.metadata.offset?.[1] ?? 0) * spr.scaleY,
         );
       if (f.guardFrames > 0) spr.setTint(0xc4eedc);
-      else if (f.state === "hitstun" && !this.bridge.reduced)
+      else if (
+        (f.state === "hitstun" || f.state === "airHit") &&
+        !this.bridge.reduced
+      )
         spr.setTint(0xffb2a2);
       else spr.clearTint();
       const height = Math.max(0, stageLayout.floor - spr.y);
@@ -489,11 +534,12 @@ export class Arena extends Phaser.Scene {
           shadow
             .setPosition(
               spr.x +
-                (contact.x - metadata.pivot.x) * (f.facing < 0 ? -0.75 : 0.75),
+                (contact.x - metadata.pivot.x) *
+                  (f.facing < 0 ? -spr.scaleX : spr.scaleX),
               stageLayout.floor + 1,
             )
             .setDisplaySize(
-              Math.max(14, contact.width * 0.75 + 8 + height * 0.08),
+              Math.max(14, contact.width * spr.scaleX + 8 + height * 0.08),
               6 + height * 0.015,
             )
             .setAlpha(Math.max(0.16, 0.58 - height / 300));
@@ -635,6 +681,20 @@ export class Arena extends Phaser.Scene {
     }
     if (m)
       for (const e of m.events) {
+        if (
+          this.bridge.combatVisible !== false &&
+          ["hit", "counter", "block"].includes(e.type)
+        ) {
+          const b =
+            this.impactBursts.find((b) => b.age >= b.duration) ??
+            this.impactBursts[0];
+          b.x = e.x;
+          b.y = e.y + 50;
+          b.age = 0;
+          b.guard = e.type === "block";
+          b.heavy = e.strength !== "light";
+          b.duration = b.guard ? 85 : b.heavy ? 140 : 95;
+        }
         if (
           [
             "hit",
@@ -783,7 +843,36 @@ export class Arena extends Phaser.Scene {
     const target = m
       ? targetFraming(
           m.fighters,
-          this.sprites.map((s) => s.getBounds()),
+          this.sprites.map((spr) => {
+            const meta = (
+              spr.texture.customData as {
+                frames?: {
+                  bounds: { x: number; y: number; w: number; h: number };
+                  pivot: { x: number; y: number };
+                }[];
+              }
+            ).frames?.[Number(spr.frame.name)];
+            if (!meta) return spr.getBounds();
+            return {
+              x:
+                spr.x +
+                (spr.flipX
+                  ? meta.pivot.x - meta.bounds.x - meta.bounds.w
+                  : meta.bounds.x - meta.pivot.x) *
+                  spr.scaleX,
+              y: spr.y + (meta.bounds.y - meta.pivot.y) * spr.scaleY,
+              width: meta.bounds.w * spr.scaleX,
+              height: meta.bounds.h * spr.scaleY,
+            };
+          }),
+          {
+            top: this.bridge.touchLayout ? 98 : 62,
+            bottom: this.bridge.touchLayout
+              ? (this.bridge.controlSafeBottom ?? 132)
+              : 54,
+            left: 20,
+            right: 20,
+          },
         )
       : { x: 400, y: 225, zoom: 1 };
     if (m?.phase === "roundOver" && m.phaseFrame < 30 && !this.bridge.reduced)
@@ -801,8 +890,8 @@ export class Arena extends Phaser.Scene {
     this.inspect
       .setPosition(hudPoint.x, hudPoint.y)
       .setScale(1 / this.framing.zoom);
-    this.inspect.setVisible(!!this.bridge.debug);
-    if (this.bridge.debug && m)
+    this.inspect.setVisible(!!this.bridge.debug && import.meta.env.DEV);
+    if (import.meta.env.DEV && this.bridge.debug && m)
       this.inspect.setText(
         "SPRITE gold | PUSH purple | HURT green | HIT red | THROW pink | SHOT cyan\n" +
           m.fighters
@@ -813,14 +902,46 @@ export class Arena extends Phaser.Scene {
             .join("  |  ") +
           `  CAM ${this.framing.zoom.toFixed(2)}`,
       );
+    this.impactFlash.clear();
+    for (const b of this.impactBursts) {
+      if (b.age >= b.duration) continue;
+      b.age += delta;
+      const life = Math.max(0, 1 - b.age / b.duration),
+        radius = (b.heavy ? 14 : 9) * (1.3 - life * 0.4);
+      if (b.guard)
+        this.impactFlash
+          .lineStyle(2, 0x9ee7ff, life)
+          .strokeCircle(b.x, b.y, radius);
+      else {
+        this.impactFlash
+          .fillStyle(0xfff4d5, life)
+          .fillCircle(b.x, b.y, this.bridge.reduced ? 2 : 4 * life);
+        for (let k = 0; k < 4; k++) {
+          const angle = (k * Math.PI) / 2 + 0.45,
+            dx = Math.cos(angle),
+            dy = Math.sin(angle);
+          this.impactFlash
+            .lineStyle(b.heavy ? 3 : 2, 0xffd67d, life)
+            .lineBetween(
+              b.x + dx * 4,
+              b.y + dy * 4,
+              b.x + dx * radius,
+              b.y + dy * radius,
+            );
+        }
+      }
+    }
+    const hasHd = this.sprites.some((s) => s.texture.key.startsWith("hd:"));
+    if (this.game.canvas.classList.contains("has-hd-art") !== hasHd)
+      this.game.canvas.classList.toggle("has-hd-art", hasHd);
     this.debugGraphic.clear();
-    if (this.bridge.debug) {
+    if (import.meta.env.DEV && this.bridge.debug) {
       const c = this.cameras.main.worldView;
       this.debugGraphic
         .lineStyle(1, 0x52caff)
         .strokeRect(c.x + 2, c.y + 2, c.width - 4, c.height - 4);
     }
-    if (this.bridge.debug && m) {
+    if (import.meta.env.DEV && this.bridge.debug && m) {
       for (const p of m.projectiles)
         this.debugGraphic
           .lineStyle(2, 0x52caff)
@@ -841,10 +962,16 @@ export class Arena extends Phaser.Scene {
         this.debugGraphic
           .lineStyle(1, 0x48edaf)
           .strokeRect(h.x, h.y + 50, h.w, h.h);
-        if (a)
+        if (a) {
           this.debugGraphic
             .lineStyle(2, f.move === "grab" ? 0xff66cc : 0xff795f)
             .strokeRect(a.x, a.y + 50, a.w, a.h);
+          const end = f.facing === 1 ? a.x + a.w : a.x;
+          this.debugGraphic
+            .lineStyle(1, 0xffd37d)
+            .lineBetween(f.x, f.y + 50, end, f.y + 50)
+            .strokeCircle(end, a.y + 50 + a.h / 2, 3);
+        }
       }
     }
   }

@@ -84,3 +84,25 @@ const v3 = spawnSync(
 if (v3.status !== 0) process.exit(1);
 
 await import("./prepare-gifts.mjs");
+
+// Original V5 illustrated key art is separate from the legacy combat atlases.
+mkdirSync("public/art", { recursive: true });
+if (existsSync("assets/source/tournament-hd.png")) {
+  const hero = spawnSync(
+    "ffmpeg",
+    [
+      "-loglevel",
+      "error",
+      "-y",
+      "-i",
+      "assets/source/tournament-hd.png",
+      "-c:v",
+      "libwebp",
+      "-quality",
+      "86",
+      "public/art/tournament-hd.webp",
+    ],
+    { stdio: "inherit" },
+  );
+  if (hero.status !== 0) process.exit(1);
+}

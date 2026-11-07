@@ -25,7 +25,7 @@ const ready = (difficulty: "easy" | "normal" = "normal", boss = false) => {
   );
   m.phase = "fight";
   m.fighters[0].x = 350;
-  m.fighters[1].x = 472;
+  m.fighters[1].x = 450;
   return m;
 };
 const run = (m: Match, n: number, a: Input = {}, b: Input = {}) => {
@@ -212,10 +212,10 @@ it("Easy Santa does not repeatedly emit projectiles inside its cooldown", () => 
 });
 it("throws pull and release continuously in both directions and at both arena edges", () => {
   for (const [ax, bx] of [
-    [350, 474],
-    [474, 350],
-    [LEFT + 124, LEFT],
-    [RIGHT - 124, RIGHT],
+    [350, 450],
+    [450, 350],
+    [LEFT + 100, LEFT],
+    [RIGHT - 100, RIGHT],
   ]) {
     const m = ready();
     const [a, b] = m.fighters;

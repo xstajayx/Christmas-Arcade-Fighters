@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { chooseMode } from "./helpers";
+import { chooseMode, openTrainingTools } from "./helpers";
 test("arcade options persist rule changes and expose two independent special controls", async ({
   page,
 }) => {
@@ -35,6 +35,7 @@ test("arcade options persist rule changes and expose two independent special con
     )
     .toBe("fight");
   await expect(page.locator(".actions [data-action]")).toHaveCount(6);
+  await openTrainingTools(page);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.keyboard.down("KeyS");
   await page.keyboard.press("KeyO");

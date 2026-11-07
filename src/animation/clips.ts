@@ -1,3 +1,4 @@
+import { motionPhase } from "./motion";
 import { balance } from "../combat/balance";
 import type { Fighter } from "../combat/engine";
 import { combatMove } from "../combat/engine";
@@ -8,7 +9,7 @@ export const clips = {
   forward: [40, 41, 42, 43, 44, 45, 46, 47],
   back: [47, 46, 45, 44, 43, 42, 41, 40],
   dash: [2, 3, 4, 5],
-  jump: [7, 7, 17],
+  jump: [7],
   landing: [6, 31, 0],
   crouch: [6],
   punch: [8, 9, 10, 11, 12, 13],
@@ -21,8 +22,9 @@ export const clips = {
   grab: [8, 26, 38, 39, 13],
   low: [6, 15, 32, 33, 34, 15],
   air: [35, 35, 36, 36, 37, 7],
-  heavyPunch: [16, 9, 24, 25, 22, 13],
-  heavyKick: [16, 6, 17, 19, 20, 21],
+  // No authored uppercut cycle exists yet; use the coherent punch cycle.
+  heavyPunch: [8, 9, 10, 11, 12, 13],
+  heavyKick: [16, 17, 18, 19, 20, 21],
   special: [24, 24, 25, 25, 12, 13],
   victory: [0, 27, 27, 27],
   defeat: [23, 28, 29, 30],
@@ -38,8 +40,10 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
   }
   if (f.state === "walk" || f.state === "dash") {
     const back =
-      (f.previous.left && f.facing === 1) ||
-      (f.previous.right && f.facing === -1);
+      f.moveSpeed !== 0
+        ? f.moveSpeed * f.facing < 0
+        : (f.previous.left && f.facing === 1) ||
+          (f.previous.right && f.facing === -1);
     sequence = ["frost", "rob", "santa"].includes(f.id)
       ? back
         ? [5, 4, 3, 2]
@@ -52,17 +56,24 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
     speed = balance.strideDistance / sequence.length;
   }
   if (f.state === "jump") {
-    sequence = clips.jump;
-    time = f.vy < 0 ? 0 : f.vy < 4 ? 7 : 14;
-    speed = 7;
+    // The source only has one genuine free-jump pose. Keep distinct logical
+    // phases, without substituting standing kicks for missing descent artwork.
+    return motionPhase(f) === "jumpStart" ? 6 : 7;
   }
-  if (f.state === "landing") sequence = clips.landing;
+  if (f.state === "landing")
+    return clips.landing[
+      Math.min(2, Math.floor(f.frame / Math.max(1, (f.frame + f.stun) / 3)))
+    ];
   if (f.state === "crouch") sequence = clips.crouch;
   if (f.state === "block")
     sequence = f.previous.down ? clips.lowGuard : clips.guard;
   if (f.state === "hitstun") {
-    sequence = f.stun > 24 ? clips.hit.slice().reverse() : clips.hit;
+    sequence = [22, 23];
     speed = 5;
+  }
+  if (f.state === "airHit") {
+    sequence = [23, 29, 30];
+    speed = 6;
   }
   if (f.state === "knockdown") {
     sequence = clips.fall;
@@ -130,6 +141,10 @@ export function animationFrame(f: Fighter, tick: number = f.animTick) {
       return ["frost", "rob", "santa"].includes(f.id)
         ? [6, 15, 6, 19, 20, 6][phase]
         : clips.low[phase];
+    // A dedicated airborne punch sheet is missing: retain the genuine guarded
+    // jump pose, with real hitbox/sparks, instead of faking a kick as a punch.
+    if (f.move === "airPunch")
+      return ["frost", "rob", "santa"].includes(f.id) ? 7 : 35;
     if (f.move === "air")
       return ["frost", "rob", "santa"].includes(f.id)
         ? clips.kick[phase]

@@ -79,11 +79,13 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
     "audio/music/santaFinal.ogg",
     "icon-192.png",
     "manifest.webmanifest",
+    "art/tournament-hd.webp",
+    "characters/hd/catalog.json",
   ])
     expect((await request.get(new URL(asset, root).href)).ok()).toBeTruthy();
   await page.goto(root);
   await menuReady(page);
-  await expect(page.locator("#overlay")).toHaveCSS("position", "absolute");
+  await expect(page.locator("#overlay")).toHaveCSS("position", "fixed");
   await expect(page.locator("#game canvas")).toHaveAttribute("width", "800");
   expect(
     (await page.locator("#game canvas").screenshot()).length,
@@ -134,7 +136,7 @@ test("compiled Pages artifact renders styles, all assets and a playable match", 
   await page.keyboard.down("KeyD");
   await expect
     .poll(async () => (await page.evaluate(snapshot)).match!.fighters[0].x)
-    .toBeGreaterThan(420);
+    .toBeGreaterThan(445);
   await page.keyboard.up("KeyD");
   await page.keyboard.press("KeyK", { delay: 70 });
   await expect
@@ -196,6 +198,7 @@ test("compact desktop keeps the complete game surface inside the viewport", asyn
   await page.locator('[data-action="stages"]').click();
   await page.locator('[data-action="start"]').click();
   await page.getByRole("button", { name: "GOT IT." }).click();
+  await page.getByText("TRAINING TOOLS", { exact: true }).click();
   await page.getByRole("button", { name: "FULL METERS" }).click();
   const box = await page.locator("#game-wrap").boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);

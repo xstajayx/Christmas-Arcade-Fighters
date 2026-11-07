@@ -1,4 +1,5 @@
-import { balance, normalDamage, strikeReach } from "../combat/balance";
+import { strikeContact } from "../combat/contact";
+import { balance, normalDamage } from "../combat/balance";
 export type FighterId =
   "jamie" | "nash" | "bucket" | "beardy" | "frost" | "rob" | "santa";
 export interface FighterDef {
@@ -158,6 +159,7 @@ export type MoveId =
   | "heavyKick"
   | "low"
   | "air"
+  | "airPunch"
   | "grab"
   | "special"
   | "special2"
@@ -197,6 +199,12 @@ export interface Move {
   poseRow?: number;
   bursts?: number;
   burstGap?: number;
+  jumpCancel?: boolean;
+  launchX?: number;
+  blockstun?: number;
+  hitstop?: number;
+  hitboxY?: number;
+  hitboxHeight?: number;
 }
 const specialCancels: MoveId[] = ["special", "special2", "special3", "super"];
 export const moves: Record<MoveId, Move> = {
@@ -222,9 +230,17 @@ export const moves: Record<MoveId, Move> = {
     knockback: 9,
     cost: 0,
     level: "mid",
-    cancel: specialCancels,
+    cancel: ["heavyPunch", "heavyKick", ...specialCancels],
   },
   heavyPunch: {
+    name: "Rising Uppercut",
+    launch: 9.2,
+    launchX: 2.2,
+    jumpCancel: true,
+    hitboxY: 185,
+    hitboxHeight: 125,
+    hitstop: 9,
+    blockstun: 15,
     startup: 13,
     active: 5,
     recovery: 24,
@@ -246,7 +262,9 @@ export const moves: Record<MoveId, Move> = {
     knockback: 25,
     cost: 0,
     level: "mid",
-    launch: 3,
+    launch: 7.2,
+    launchX: 3,
+    jumpCancel: true,
     cancel: ["super"],
   },
   low: {
@@ -272,6 +290,23 @@ export const moves: Record<MoveId, Move> = {
     cost: 0,
     level: "air",
     cancel: ["super"],
+  },
+  airPunch: {
+    name: "Jump Punch",
+    startup: 5,
+    active: 6,
+    recovery: 10,
+    damage: 8,
+    range: 55,
+    stun: 18,
+    knockback: 6,
+    cost: 0,
+    level: "air",
+    hitboxY: 130,
+    hitboxHeight: 75,
+    blockstun: 10,
+    hitstop: 4,
+    cancel: ["air", "super"],
   },
   grab: {
     startup: 7,
@@ -624,17 +659,12 @@ export function getMove(
       poseRow: dash ? dashRows[id] : projectileRows[id],
     });
   }
-  if (move === "punch" || move === "kick")
-    m.range =
-      (strikeReach[id][move === "punch" ? 0 : 1] - 13) /
-      fighterById(id, profile).reach;
-  if (["heavyPunch", "heavyKick", "low", "air"].includes(move))
-    m.range =
-      ((move === "heavyKick" ? 98 : move === "heavyPunch" ? 90 : 88) - 13) /
-      fighterById(id, profile).reach;
   if (profile === "standard" && move === "special")
     m.range = (96 - 13) / fighterById(id).reach;
   if (m.kind === "throw") m.range = (97 - 13) / fighterById(id, profile).reach;
+  const contact = strikeContact(id, move);
+  if (contact)
+    m.range = (contact.reach + 2 - 13) / fighterById(id, profile).reach;
   if (move === "super")
     m.damage = Math.round(
       (balance.superReferenceHealth * balance.superFraction) /

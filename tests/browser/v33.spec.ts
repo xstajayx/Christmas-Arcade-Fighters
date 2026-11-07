@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Match } from "../../src/combat/engine";
-import { chooseMode } from "./helpers";
+import { chooseMode, openTrainingTools } from "./helpers";
 const state = () =>
   (window as unknown as { __CAF__: { match: Match } }).__CAF__;
 test("Super callout clears after repeated attacks, restart and menu exit", async ({
@@ -22,6 +22,7 @@ test("Super callout clears after repeated attacks, restart and menu exit", async
     .poll(async () => (await page.evaluate(state)).match.phase)
     .toBe("fight");
   for (let n = 0; n < 2; n++) {
+    await openTrainingTools(page);
     await page.getByRole("button", { name: "FULL METERS" }).click();
     await page
       .locator("#training-meter")
@@ -31,6 +32,7 @@ test("Super callout clears after repeated attacks, restart and menu exit", async
     await expect(page.locator("#move-callout")).toHaveText("");
     expect((await page.evaluate(state)).match.fighters[0].superMeter).toBe(0);
   }
+  await openTrainingTools(page);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page
     .locator("#training-meter")

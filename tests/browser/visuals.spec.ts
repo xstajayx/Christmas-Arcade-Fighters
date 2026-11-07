@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import type Phaser from "phaser";
 import type { Match } from "../../src/combat/engine";
 import { writeFileSync } from "node:fs";
-import { chooseMode } from "./helpers";
+import { chooseMode, openTrainingTools } from "./helpers";
 test.beforeEach(async ({ browserName }, info) => {
   test.skip(
     browserName !== "chromium" || info.project.name !== "desktop",
@@ -186,6 +186,7 @@ test("all stage plates are coherent and boss gift animations clean up after coll
         (window as unknown as { __CAF__: { match: { phase: string } } }).__CAF__
           .match.phase === "fight",
     );
+    await openTrainingTools(page);
     await page.getByRole("button", { name: "FULL METERS" }).click();
     await page.keyboard.press("KeyO");
     const state = () =>

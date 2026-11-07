@@ -1,6 +1,6 @@
 {
   "name": "christmas-arcade-fighters",
-  "version": "3.0.0-rc.1",
+  "version": "5.0.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,5 +1,5 @@
 import { fighterById } from "../../src/fighters/data";
-import { chooseMode } from "./helpers";
+import { chooseMode, openTrainingTools } from "./helpers";
 import { test, expect, type Page } from "@playwright/test";
 import type { Match } from "../../src/combat/engine";
 type State = {
@@ -107,7 +107,9 @@ test("fixed dash/projectile, hitbox lab and integrated Super work through contro
 }) => {
   await choose(page, "TRAINING", "JAMIE");
   await expect.poll(async () => (await state(page)).match?.phase).toBe("fight");
+  await openTrainingTools(page);
   await page.locator("#show-hitboxes").check();
+  await openTrainingTools(page);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.keyboard.press("KeyO");
   await expect
@@ -124,12 +126,14 @@ test("fixed dash/projectile, hitbox lab and integrated Super work through contro
     .poll(async () => (await state(page)).match!.fighters[0].combo)
     .toBeGreaterThanOrEqual(2);
   await page.waitForTimeout(600);
+  await openTrainingTools(page);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.keyboard.press("KeyO");
   await expect
     .poll(async () => (await state(page)).match!.fighters[0].move)
     .toBe("special2");
   await page.waitForTimeout(900);
+  await openTrainingTools(page);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.keyboard.down("KeyS");
   await page.keyboard.press("KeyI");
@@ -138,6 +142,7 @@ test("fixed dash/projectile, hitbox lab and integrated Super work through contro
     .poll(async () => (await state(page)).match!.fighters[0].move)
     .toBe("special");
   await page.waitForTimeout(1000);
+  await openTrainingTools(page);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.keyboard.press("Space");
   await expect
@@ -299,6 +304,7 @@ test("ten real input-driven bouts reach the boss, continue, ending and leaderboa
     profile: "standard",
     health: 1265,
   });
+  await openTrainingTools(page);
   await page
     .getByRole("button", { name: "SPRITE INSPECTOR", exact: true })
     .click();
@@ -336,6 +342,7 @@ test("a short press/release between frames is latched until the simulation consu
 }) => {
   await choose(page, "TRAINING", "JAMIE");
   await expect.poll(async () => (await state(page)).match?.phase).toBe("fight");
+  await openTrainingTools(page);
   await page.getByRole("button", { name: "FULL METERS" }).click();
   await page.evaluate(() => {
     document.body.dispatchEvent(

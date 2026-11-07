@@ -1,0 +1,344 @@
+{
+  "version": 2,
+  "status": "MISSING: no production HD animation sheets integrated; legacy art remains active.",
+  "direction": "Original cohesive modern 2D illustrated arcade fighters. Preserve existing faces, costumes and personalities; clean linework, consistent lighting/anatomy. No pixel-art enlargement or global blur.",
+  "referenceFighters": [
+    "jamie",
+    "beardy"
+  ],
+  "remainingFighters": [
+    "nash",
+    "bucket",
+    "frost",
+    "rob",
+    "santa"
+  ],
+  "frameSize": [
+    512,
+    640
+  ],
+  "feetAnchor": [
+    256,
+    608
+  ],
+  "sheetColumns": 4,
+  "format": "RGBA PNG or lossless WebP; transparent background; no baked floor/shadow; authored per-frame feet and grip anchors.",
+  "path": "characters/hd/<fighter>/<clip>.webp",
+  "clips": [
+    {
+      "clip": "idle",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "walkForward",
+      "frames": 12,
+      "width": 2048,
+      "height": 1920
+    },
+    {
+      "clip": "walkBackward",
+      "frames": 12,
+      "width": 2048,
+      "height": 1920
+    },
+    {
+      "clip": "crouch",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "jumpStart",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "jumpAscent",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "jumpApex",
+      "frames": 2,
+      "width": 1024,
+      "height": 640
+    },
+    {
+      "clip": "jumpDescent",
+      "frames": 3,
+      "width": 1536,
+      "height": 640
+    },
+    {
+      "clip": "landing",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "airPunch",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "airKick",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "standingGuard",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "crouchingGuard",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "lightPunch",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "lightKick",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "heavyPunch",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "heavyKick",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "groundHit",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "launch",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "airHit",
+      "frames": 4,
+      "width": 2048,
+      "height": 640
+    },
+    {
+      "clip": "knockdown",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "getUp",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "grab",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "throw",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "victory",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "defeat",
+      "frames": 6,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "special1",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "special2",
+      "frames": 8,
+      "width": 2048,
+      "height": 1280
+    },
+    {
+      "clip": "super",
+      "frames": 12,
+      "width": 2048,
+      "height": 1920
+    }
+  ],
+  "currentLimitations": [
+    "Only two authored idle poses, not eight.",
+    "Four regular fighters have eight walk poses; bosses/Frost have fewer.",
+    "Free-jump phases reuse one authentic jump pose.",
+    "No dedicated airborne-punch or rising-uppercut cycle; legacy coherent jump/punch poses are retained.",
+    "Launch/air-hit reactions reuse existing recoil/fall art.",
+    "HD clip loading, per-frame anchors, crops, offsets, filtering and phase timing are implemented; production combat sheets remain missing."
+  ],
+  "deliveryBudget": "Lazy clips for the active pair; at most eight sheets and 32 MiB decoded texture budget. Maximum 4,194,304 pixels per sheet. Profile physical phones before release.",
+  "runtime": {
+    "catalog": "characters/hd/catalog.json maps fighter IDs to characters/hd/<fighter>/manifest.json; empty until production artwork is approved.",
+    "manifest": {
+      "version": 1,
+      "referenceHeight": 560,
+      "clips": {
+        "lightPunch": {
+          "image": "characters/hd/jamie/lightPunch.webp",
+          "size": [
+            2048,
+            1280
+          ],
+          "frames": [
+            {
+              "rect": [
+                0,
+                0,
+                512,
+                640
+              ],
+              "pivot": [
+                256,
+                608
+              ],
+              "bounds": [
+                60,
+                48,
+                392,
+                560
+              ],
+              "offset": [
+                0,
+                0
+              ],
+              "contacts": [
+                {
+                  "x": 180,
+                  "width": 64
+                },
+                {
+                  "x": 330,
+                  "width": 60
+                }
+              ],
+              "ticks": 3,
+              "phase": "startup"
+            },
+            {
+              "rect": [
+                512,
+                0,
+                512,
+                640
+              ],
+              "pivot": [
+                256,
+                608
+              ],
+              "bounds": [
+                60,
+                48,
+                392,
+                560
+              ],
+              "offset": [
+                0,
+                0
+              ],
+              "contacts": [
+                {
+                  "x": 180,
+                  "width": 64
+                },
+                {
+                  "x": 330,
+                  "width": 60
+                }
+              ],
+              "ticks": 3,
+              "phase": "active"
+            },
+            {
+              "rect": [
+                1024,
+                0,
+                512,
+                640
+              ],
+              "pivot": [
+                256,
+                608
+              ],
+              "bounds": [
+                60,
+                48,
+                392,
+                560
+              ],
+              "offset": [
+                0,
+                0
+              ],
+              "contacts": [
+                {
+                  "x": 180,
+                  "width": 64
+                },
+                {
+                  "x": 330,
+                  "width": 60
+                }
+              ],
+              "ticks": 3,
+              "phase": "recovery"
+            }
+          ]
+        }
+      }
+    },
+    "phaseContract": "Attack sheets must include startup, active and recovery frames. Match fist/boot world contact landmarks in src/art/legacy-contact.json at referenceHeight world scale (170/referenceHeight); do not silently change combat reach. Dedicated launch and air-punch sheets still need production.",
+    "rendering": "Explicit per-texture linear filtering for HD only. Legacy art retains nearest filtering. World feet origin remains unchanged.",
+    "format": "Rect, pivot, opaque bounds, optional visual offset and contact spans are in source pixels. Per-frame ticks control non-attack timing. Walk clips use stride in world units."
+  },
+  "actualV5Artwork": {
+    "source": "assets/source/tournament-hd.png",
+    "web": "art/tournament-hd.webp",
+    "dimensions": [
+      1672,
+      941
+    ],
+    "description": "New original Jamie and Beardy illustrated menu key art; not a combat animation sheet."
+  }
+}

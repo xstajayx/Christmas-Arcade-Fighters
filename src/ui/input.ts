@@ -24,6 +24,8 @@ export class Controls {
   private touchHeld = new Set<string>();
   private keyLatched = new Set<string>();
   private touchLatched = new Set<string>();
+  private joyPointer: number | null = null;
+  private captures = new Map<number, HTMLElement>();
   constructor(mapping: Record<string, string>) {
     this.mapping = mapping;
     window.addEventListener("keydown", (e) => {
@@ -36,7 +38,7 @@ export class Controls {
       )
         e.preventDefault();
       this.keys.add(e.code);
-      this.keyLatched.add(e.code);
+      if (!e.repeat) this.keyLatched.add(e.code);
       if (e.code === "Escape" && !e.repeat) this.onPause();
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.code));
@@ -67,6 +69,10 @@ export class Controls {
     this.keyLatched.clear();
     this.touchLatched.clear();
     this.touch.clear();
+    this.joyPointer = null;
+    for (const [id, element] of this.captures)
+      if (element.hasPointerCapture(id)) element.releasePointerCapture(id);
+    this.captures.clear();
     this.refresh();
     document.documentElement.style.setProperty("--joy-x", "0px");
     document.documentElement.style.setProperty("--joy-y", "0px");
@@ -146,15 +152,26 @@ export class Controls {
     };
     joy.addEventListener("pointerdown", (e) => {
       e.preventDefault();
+      if (this.joyPointer !== null) return;
+      this.joyPointer = e.pointerId;
       joy.setPointerCapture(e.pointerId);
+      this.captures.set(e.pointerId, joy);
       move(e);
     });
     joy.addEventListener("pointermove", (e) => {
-      if (joy.hasPointerCapture(e.pointerId)) move(e);
+      if (this.joyPointer === e.pointerId && joy.hasPointerCapture(e.pointerId))
+        move(e);
     });
     const releaseJoy = (e: PointerEvent) => {
+      if (this.joyPointer !== e.pointerId) return;
+      const held = this.touch.get(e.pointerId);
       this.touch.delete(e.pointerId);
+      this.captures.delete(e.pointerId);
+      this.joyPointer = null;
       this.refresh();
+      if (e.type !== "pointerup" && held)
+        for (const action of held.split(","))
+          if (!this.touchHeld.has(action)) this.touchLatched.delete(action);
       document.documentElement.style.setProperty("--joy-x", "0px");
       document.documentElement.style.setProperty("--joy-y", "0px");
     };
@@ -166,12 +183,17 @@ export class Controls {
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         b.setPointerCapture(e.pointerId);
+        this.captures.set(e.pointerId, b);
         this.touch.set(e.pointerId, b.dataset.action!);
         this.refresh();
       });
       const release = (e: PointerEvent) => {
+        const action = this.touch.get(e.pointerId);
         this.touch.delete(e.pointerId);
+        this.captures.delete(e.pointerId);
         this.refresh();
+        if (e.type !== "pointerup" && action && !this.touchHeld.has(action))
+          this.touchLatched.delete(action);
       };
       b.addEventListener("pointerup", release);
       b.addEventListener("pointercancel", release);

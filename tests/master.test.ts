@@ -32,26 +32,25 @@ it("grounded pushboxes preserve side order including fast corner pressure", () =
     }
   }
 });
-it("each fighter punches at non-overlapping body distance, kicks reach farther and whiffs beyond reach", () => {
+it("each fighter punches and kicks at torso spacing and whiffs beyond the drawn limb", () => {
   for (const def of roster) {
     const m = createMatch(def.id, "jamie", true);
     run(m, 100);
     const [a, b] = m.fighters;
     a.x = 300;
-    b.x = 423;
+    b.x = 402;
     a.state = "attack";
     a.move = "punch";
     a.frame = getMove(def.id, "punch").startup;
     expect(overlaps(pushbox(a), pushbox(b))).toBe(false);
     expect(overlaps(activeHitbox(a)!, hurtbox(b))).toBe(true);
-    const punch = activeHitbox(a)!;
     a.move = "kick";
     a.frame = getMove(def.id, "kick").startup;
-    expect(activeHitbox(a)!.w).toBeGreaterThan(punch.w);
+    expect(overlaps(activeHitbox(a)!, hurtbox(b))).toBe(true);
     b.x = 500;
     expect(overlaps(activeHitbox(a)!, hurtbox(b))).toBe(false);
     a.facing = -1;
-    b.x = 177;
+    b.x = 198;
     expect(overlaps(activeHitbox(a)!, hurtbox(b))).toBe(true);
   }
 });

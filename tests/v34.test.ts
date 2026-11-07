@@ -34,10 +34,10 @@ it("contact shadows use both opaque soles and reject transparent padding/fringe"
 });
 it("throw wind-up preserves release position, damage, velocity and grounding in both directions and at arena edges", () => {
   for (const [ax, bx] of [
-    [350, 474],
-    [474, 350],
-    [LEFT + 124, LEFT],
-    [RIGHT - 124, RIGHT],
+    [350, 450],
+    [450, 350],
+    [LEFT + 100, LEFT],
+    [RIGHT - 100, RIGHT],
   ]) {
     const m = createMatch("jamie", "nash", true);
     m.phase = "fight";

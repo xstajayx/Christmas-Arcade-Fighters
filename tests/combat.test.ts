@@ -4,6 +4,7 @@ import {
   step,
   activeHitbox,
   GROUND,
+  RIGHT,
   type Match,
   type Input,
 } from "../src/combat/engine";
@@ -39,6 +40,9 @@ describe("fixed-step combat", () => {
     run(m, 20, { punch: true }, { right: true });
     expect(m.fighters[1].health).toBe(hp - 1);
     const low = ready();
+    // Pin the defender so walking backward cannot turn the low into a whiff.
+    low.fighters[0].x = RIGHT - 100;
+    low.fighters[1].x = RIGHT;
     run(low, 25, { down: true, punch: true }, { right: true });
     expect(low.fighters[1].health).toBeLessThan(hp - 1);
     const guard = ready();
@@ -47,7 +51,8 @@ describe("fixed-step combat", () => {
   });
   it("grabs defeat a guard at close range", () => {
     const m = ready();
-    m.fighters[1].x = 390;
+    m.fighters[0].x = RIGHT - 100;
+    m.fighters[1].x = RIGHT;
     run(m, 55, { grab: true }, { right: true });
     expect(m.fighters[1].health).toBeLessThan(fighterById("nash").health - 10);
     expect(m.fighters[1].state).toBe("knockdown");
@@ -201,13 +206,15 @@ describe("combat protections", () => {
     step(m, [{}, {}]);
     expect(m.timer).toBe(time);
   });
-  it("mirrors facing after crossing over in the air", () => {
+  it("locks facing in the air and turns after landing across the opponent", () => {
     const m = ready();
     m.fighters[0].x = 430;
     m.fighters[0].y = 200;
     step(m, [{}, {}]);
-    expect(m.fighters[0].facing).toBe(-1);
+    expect(m.fighters[0].facing).toBe(1);
     expect(m.fighters[1].facing).toBe(1);
+    run(m, 60);
+    expect(m.fighters[0].facing).toBe(-1);
   });
   it("gains meter on contact without exceeding the cap", () => {
     const m = ready();
